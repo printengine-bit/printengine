@@ -1,0 +1,2 @@
+import { describe,expect,it } from "vitest";import { passwordHash,passwordMatches } from "@/lib/auth";
+describe("password security",()=>{it("hashes and verifies a password without retaining plaintext",async()=>{const hashed=await passwordHash("correct horse battery staple");expect(hashed).not.toContain("correct horse");expect(await passwordMatches("correct horse battery staple",hashed)).toBe(true);expect(await passwordMatches("wrong password",hashed)).toBe(false);});});

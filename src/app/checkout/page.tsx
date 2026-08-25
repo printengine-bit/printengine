@@ -1,0 +1,23 @@
+import type { Metadata } from "next";
+import { CheckoutFooter, CheckoutHeader, Stepper } from "@/components/checkout/CheckoutChrome";
+import CheckoutView from "@/components/checkout/CheckoutView";
+
+export const metadata: Metadata = {
+  title: "Secure checkout",
+  description: "Complete your printengine order.",
+  robots: { index: false, follow: false },
+};
+
+export default function Page() {
+  return (
+    <div className="flex min-h-screen flex-col">
+      <CheckoutHeader />
+      <Stepper current={1} />
+      <main id="main" className="flex-1">
+        <h1 className="sr-only">Secure checkout</h1>
+        <CheckoutView />
+      </main>
+      <CheckoutFooter />
+    </div>
+  );
+}
