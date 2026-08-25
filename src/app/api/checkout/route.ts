@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { createHash, randomBytes } from "node:crypto";
 import { z } from "zod";
 import { sessionUser } from "@/lib/auth";
 import { db, databaseConfigured } from "@/lib/db";
 import { METHOD_PRICE } from "@/lib/pricing";
+import { rateLimit, requestIsSameOrigin, tooManyRequests } from "@/lib/security";
 
 const lineSchema = z.object({
   slug: z.string().min(1), colour: z.string().min(1), size: z.string().min(1),
@@ -17,7 +19,7 @@ const bodySchema = z.object({
     city: z.string().trim().min(2).max(80), state: z.string().trim().min(2).max(80), postalCode: z.string().trim().min(5).max(10),
   }),
 });
-type Variant = { variant_id:string;product_id:string;sku:string;stock:number;price:number;name:string;methods:string[] };
+type Variant = { variant_id:string;product_id:string;sku:string;stock:number;reserved_stock:number;price:number;name:string;methods:string[] };
 type Discount={id:string;name:string;code:string|null;type:string;value:number;minimum_quantity:number;minimum_subtotal:number;buy_quantity:number|null;get_quantity:number|null;combinable:boolean};
 
 function discountAmount(rule:Discount, subtotal:number, quantity:number, unitPrices:number[], shipping:number) {
@@ -34,6 +36,9 @@ function discountAmount(rule:Discount, subtotal:number, quantity:number, unitPri
 
 export async function POST(request: Request) {
   if (!databaseConfigured()) return NextResponse.json({ error: "The PrintEngine commerce database is not connected yet." }, { status: 503 });
+  if (!requestIsSameOrigin(request)) return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+  const limited = await rateLimit(request, "checkout", 10, 600);
+  if (!limited.allowed) return tooManyRequests(limited.retryAfter);
   const keyId = process.env.RAZORPAY_KEY_ID;
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
   if (!keyId || !keySecret) return NextResponse.json({ error: "Razorpay is not connected yet. Your cart remains saved." }, { status: 503 });
@@ -43,14 +48,15 @@ export async function POST(request: Request) {
     const verified: Array<{ line: z.infer<typeof lineSchema>; variant: Variant }> = [];
     for (const line of parsed.data.lines) {
       const rows = await db()<Variant[]>`
-        SELECT v.id variant_id,v.product_id,v.sku,v.stock,coalesce(v.price,p.base_price)::int price,p.name,p.methods
+        SELECT v.id variant_id,v.product_id,v.sku,v.stock,v.reserved_stock,coalesce(v.price,p.base_price)::int price,p.name,p.methods
         FROM product_variants v JOIN products p ON p.id=v.product_id
         WHERE p.slug=${line.slug} AND v.colour=${line.colour} AND v.size=${line.size}
           AND p.status='active' AND v.active=true LIMIT 1
       `;
       const variant = rows[0];
       if (!variant) throw new Error(`${line.colour} / ${line.size} is unavailable for ${line.slug}.`);
-      if (variant.stock < line.qty) throw new Error(`Only ${variant.stock} units remain for ${variant.name} in ${line.colour} / ${line.size}.`);
+      const available = variant.stock - variant.reserved_stock;
+      if (available < line.qty) throw new Error(`Only ${Math.max(0,available)} units remain for ${variant.name} in ${line.colour} / ${line.size}.`);
       if (!variant.methods.includes(line.method)) throw new Error(`${line.method} is unavailable for ${variant.name}.`);
       verified.push({ line, variant });
     }
@@ -62,6 +68,7 @@ export async function POST(request: Request) {
     const discounts = await db()<Discount[]>`
       SELECT id,name,code,type,value,minimum_quantity,minimum_subtotal,buy_quantity,get_quantity,combinable
       FROM discounts WHERE active=true AND (starts_at IS NULL OR starts_at<=now()) AND (ends_at IS NULL OR ends_at>=now())
+        AND (usage_limit IS NULL OR used_count < usage_limit)
         AND (code IS NULL OR code=${code})
     `;
     const unitPrices = verified.flatMap(x=>Array.from({length:x.line.qty},()=>x.variant.price));
@@ -73,6 +80,8 @@ export async function POST(request: Request) {
     const discountTotal = applied.filter(x=>x.rule.type!=='free_shipping').reduce((sum,x)=>sum+x.amount,0);
     const grandTotal = Math.max(0,subtotal+decorationTotal-discountTotal+shippingTotal);
     const orderNumber = `PE-${Date.now().toString().slice(-8)}`;
+    const accessToken=randomBytes(32).toString("base64url");
+    const accessTokenHash=createHash("sha256").update(accessToken).digest("hex");
     const razorpayResponse = await fetch("https://api.razorpay.com/v1/orders", {
       method:"POST", headers:{ authorization:`Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`,"content-type":"application/json" },
       body:JSON.stringify({ amount:grandTotal*100,currency:"INR",receipt:orderNumber,notes:{source:"printengine-custom"} }), cache:"no-store",
@@ -82,14 +91,28 @@ export async function POST(request: Request) {
     const user = await sessionUser();
     const address = {name:parsed.data.customer.name,line1:parsed.data.customer.line1,line2:parsed.data.customer.line2??"",city:parsed.data.customer.city,state:parsed.data.customer.state,postalCode:parsed.data.customer.postalCode};
     const created = await db().begin(async sql=>{
+      const expired = await sql<Array<{id:string}>>`SELECT id FROM orders WHERE payment_status='pending' AND reservation_released=false AND reservation_expires_at<now() FOR UPDATE SKIP LOCKED`;
+      for (const stale of expired) {
+        const staleItems = await sql<Array<{variant_id:string;quantity:number}>>`SELECT variant_id,sum(quantity)::int quantity FROM order_items WHERE order_id=${stale.id} AND variant_id IS NOT NULL GROUP BY variant_id`;
+        for (const item of staleItems) await sql`UPDATE product_variants SET reserved_stock=greatest(0,reserved_stock-${item.quantity}),updated_at=now() WHERE id=${item.variant_id}`;
+        await sql`UPDATE orders SET reservation_released=true,updated_at=now() WHERE id=${stale.id}`;
+      }
+      const requested = new Map<string,number>();
+      for (const {line,variant} of verified) requested.set(variant.variant_id,(requested.get(variant.variant_id)??0)+line.qty);
+      for (const [variantId,qty] of requested) {
+        const locked = await sql<Array<{stock:number;reserved_stock:number}>>`SELECT stock,reserved_stock FROM product_variants WHERE id=${variantId} FOR UPDATE`;
+        if (!locked[0] || locked[0].stock-locked[0].reserved_stock<qty) throw new Error("An item sold out while checkout was being prepared. Please review your cart.");
+      }
       const orders = await sql<Array<{id:string;number:string}>>`
-        INSERT INTO orders (number,customer_id,email,phone,shipping_address,subtotal,decoration_total,discount_total,shipping_total,grand_total,discount_id,discount_code,razorpay_order_id)
-        VALUES (${orderNumber},${user?.id??null},${parsed.data.customer.email.toLowerCase()},${parsed.data.customer.phone},${sql.json(address)},${subtotal},${decorationTotal},${discountTotal},${shippingTotal},${grandTotal},${applied[0]?.rule.id??null},${code},${razorpay.id!}) RETURNING id,number
+        INSERT INTO orders (number,customer_id,email,phone,shipping_address,subtotal,decoration_total,discount_total,shipping_total,grand_total,discount_id,discount_code,razorpay_order_id,reservation_expires_at,access_token_hash)
+        VALUES (${orderNumber},${user?.id??null},${parsed.data.customer.email.toLowerCase()},${parsed.data.customer.phone},${sql.json(address)},${subtotal},${decorationTotal},${discountTotal},${shippingTotal},${grandTotal},${applied[0]?.rule.id??null},${code},${razorpay.id!},now()+interval '30 minutes',${accessTokenHash}) RETURNING id,number
       `;
       for (const {line,variant} of verified) await sql`INSERT INTO order_items (order_id,product_id,variant_id,product_name,sku,colour,size,method,quantity,unit_price,decoration_price,designs) VALUES (${orders[0].id},${variant.product_id},${variant.variant_id},${variant.name},${variant.sku},${line.colour},${line.size},${line.method},${line.qty},${variant.price},${METHOD_PRICE[line.method]*line.designs.length},${sql.json(JSON.parse(JSON.stringify(line.designs)))})`;
+      for (const [variantId,qty] of requested) await sql`UPDATE product_variants SET reserved_stock=reserved_stock+${qty},updated_at=now() WHERE id=${variantId}`;
+      await sql`INSERT INTO order_events (order_id,event,details) VALUES (${orders[0].id},'checkout_created',${sql.json({razorpayOrderId:razorpay.id})})`;
       return orders[0];
     });
-    return NextResponse.json({orderId:created.id,orderNumber:created.number,razorpayOrderId:razorpay.id,keyId,amount:grandTotal*100,currency:"INR",customer:parsed.data.customer});
+    return NextResponse.json({orderId:created.id,orderNumber:created.number,accessToken,razorpayOrderId:razorpay.id,keyId,amount:grandTotal*100,currency:"INR",customer:parsed.data.customer});
   } catch(error) {
     return NextResponse.json({error:error instanceof Error?error.message:"Checkout could not be created."},{status:502});
   }

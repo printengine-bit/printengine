@@ -40,10 +40,11 @@ export default function CheckoutView() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ lines, coupon, customer }),
       });
-      const result = (await response.json()) as { orderId?:string;orderNumber?:string;razorpayOrderId?:string;keyId?:string;amount?:number;currency?:string;error?: string };
-      if (!response.ok || !result.orderId || !result.razorpayOrderId || !result.keyId) {
+      const result = (await response.json()) as { orderId?:string;orderNumber?:string;accessToken?:string;razorpayOrderId?:string;keyId?:string;amount?:number;currency?:string;error?: string };
+      if (!response.ok || !result.orderId || !result.accessToken || !result.razorpayOrderId || !result.keyId) {
         throw new Error(result.error || "Secure checkout is temporarily unavailable.");
       }
+      const orderAccessToken=result.accessToken;
       await loadRazorpay();
       const Razorpay = window.Razorpay;
       if (!Razorpay) throw new Error("The payment window could not be loaded.");
@@ -56,9 +57,9 @@ export default function CheckoutView() {
           const verified = await fetch("/api/payments/razorpay/verify", { method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({orderId:result.orderId,razorpayOrderId:paid.razorpay_order_id,razorpayPaymentId:paid.razorpay_payment_id,signature:paid.razorpay_signature}) });
           const verification = await verified.json() as {orderNumber?:string;error?:string};
           if(!verified.ok||!verification.orderNumber){setError(verification.error??"Payment verification failed. Contact support before retrying.");setPending(false);return;}
-          localStorage.setItem("printengine.lastOrder",JSON.stringify({id:verification.orderNumber,lines,totals,coupon,speed:"Standard delivery",placedAt:new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}));
+          localStorage.setItem("printengine.lastOrder",JSON.stringify({id:verification.orderNumber,accessToken:orderAccessToken,lines,totals,coupon,speed:"Standard delivery",placedAt:new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}));
           clearCart();
-          router.push(`/order/${verification.orderNumber}/confirmed`);
+          router.push(`/order/${verification.orderNumber}/confirmed?access=${encodeURIComponent(orderAccessToken)}`);
         }, modal: { ondismiss: () => setPending(false) },
       });
       payment.open();

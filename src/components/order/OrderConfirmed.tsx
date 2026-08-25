@@ -18,26 +18,22 @@ type PlacedOrder = {
   coupon: string | null;
   speed: string;
   placedAt: string;
+  accessToken?:string;
+  address?:Record<string,string>;
 };
 
-export default function OrderConfirmed({ orderId }: { orderId: string }) {
+export default function OrderConfirmed({ orderId,accessToken }: { orderId: string;accessToken?:string }) {
   const [placed, setPlaced] = useState<PlacedOrder | null>(null);
   const [resolved, setResolved] = useState(DEMO_MODE && orderId === order.id);
 
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("printengine.lastOrder");
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as PlacedOrder;
-      if (parsed.id === orderId) setPlaced(parsed);
-    } catch {
-      // Malformed local data is treated as no matching order.
-    } finally {
-      setResolved(true);
-    }
-  }, [orderId]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+    const load=async()=>{try{
+      const query=accessToken?`?access=${encodeURIComponent(accessToken)}`:"";
+      const response=await fetch(`/api/orders/${encodeURIComponent(orderId)}${query}`,{cache:"no-store"});
+      if(response.ok){const result=await response.json() as {order?:PlacedOrder};if(result.order){setPlaced({...result.order,accessToken});return;}}
+      const raw=localStorage.getItem("printengine.lastOrder");if(raw){const parsed=JSON.parse(raw) as PlacedOrder;if(parsed.id===orderId)setPlaced(parsed);}
+    }catch{}finally{setResolved(true);}};void load();
+  }, [orderId,accessToken]);
 
   if (!resolved) {
     return <div className="container-pe py-20 text-center text-[14px] text-muted">Confirming your order…</div>;
@@ -156,8 +152,8 @@ export default function OrderConfirmed({ orderId }: { orderId: string }) {
                   <h2 className="text-[20px] font-medium tracking-[-0.02em]">
                     Arriving by {order.eta}
                   </h2>
-                  <p className="mt-2 text-[14px]">{order.address.name}</p>
-                  <p className="text-[14px] text-muted">{order.address.lines}</p>
+                  <p className="mt-2 text-[14px]">{placed?.address?.name??order.address.name}</p>
+                  <p className="text-[14px] text-muted">{placed?.address?`${placed.address.line1}${placed.address.line2?`, ${placed.address.line2}`:""}, ${placed.address.city}, ${placed.address.state} ${placed.address.postalCode}`:order.address.lines}</p>
                   <p className="mt-1 text-[13px] text-muted">{order.address.speed}</p>
                 </div>
               </div>
@@ -286,7 +282,7 @@ export default function OrderConfirmed({ orderId }: { orderId: string }) {
 
         <div className="my-12 flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Link
-            href={`/order/${displayId}`}
+            href={`/order/${displayId}${accessToken?`?access=${encodeURIComponent(accessToken)}`:""}`}
             className="flex h-12 items-center justify-center bg-lime px-8 text-btn text-ink transition-opacity hover:opacity-90"
           >
             Track your order

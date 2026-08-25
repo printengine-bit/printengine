@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { artworkProxyUrl, cloudinaryConfigured, uploadArtwork } from "@/lib/cloudinary";
 import { sessionUser } from "@/lib/auth";
 import { databaseConfigured, db } from "@/lib/db";
+import { rateLimit, requestIsSameOrigin, tooManyRequests } from "@/lib/security";
 
 type OpenAIImageResponse = { data?: { b64_json?: string }[]; error?: { message?: string } };
 
@@ -12,6 +13,9 @@ export async function POST(request: Request) {
       { status: 503 }
     );
   }
+  if (!requestIsSameOrigin(request)) return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+  if (!databaseConfigured()) return NextResponse.json({ error: "AI generation requires the commerce database for usage controls." }, { status: 503 });
+  const limited=await rateLimit(request,"ai-generate",10,86400);if(!limited.allowed)return tooManyRequests(limited.retryAfter);
 
   const body = (await request.json()) as { prompt?: string; style?: string };
   const prompt = body.prompt?.trim().slice(0, 600);

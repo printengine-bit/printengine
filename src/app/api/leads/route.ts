@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { databaseConfigured } from "@/lib/db";
+import { rateLimit, requestIsSameOrigin, tooManyRequests } from "@/lib/security";
 
 const ALLOWED_TYPES = new Set(["newsletter", "bulk-quote", "support"]);
 
@@ -10,6 +12,8 @@ export async function POST(request: Request) {
       { status: 503 }
     );
   }
+  if (!requestIsSameOrigin(request)) return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+  if (databaseConfigured()) { const limited=await rateLimit(request,"lead",8,3600);if(!limited.allowed)return tooManyRequests(limited.retryAfter); }
 
   let payload: Record<string, unknown>;
   try {

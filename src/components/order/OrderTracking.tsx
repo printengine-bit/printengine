@@ -15,27 +15,23 @@ type PlacedOrder = {
   lines: CartLine[];
   totals: { total: number };
   placedAt: string;
+  status?: string;
+  address?: Record<string,string>;
+  trackingNumber?: string|null;
 };
 
-export default function OrderTracking({ orderId }: { orderId: string }) {
+export default function OrderTracking({ orderId,accessToken }: { orderId: string;accessToken?:string }) {
   const [placed, setPlaced] = useState<PlacedOrder | null>(null);
   const [resolved, setResolved] = useState(DEMO_MODE && orderId === order.id);
 
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("printengine.orders");
-      if (!raw) return;
-      const all = JSON.parse(raw) as PlacedOrder[];
-      const match = all.find((o) => o && o.id === orderId);
-      if (match) setPlaced(match);
-    } catch {
-      // Malformed local data is treated as no matching order.
-    } finally {
-      setResolved(true);
-    }
-  }, [orderId]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+    const load=async()=>{try{
+      const query=accessToken?`?access=${encodeURIComponent(accessToken)}`:"";
+      const response=await fetch(`/api/orders/${encodeURIComponent(orderId)}${query}`,{cache:"no-store"});
+      if(response.ok){const result=await response.json() as {order?:PlacedOrder};if(result.order){setPlaced(result.order);return;}}
+      const raw=localStorage.getItem("printengine.orders");if(raw){const all=JSON.parse(raw) as PlacedOrder[];const match=all.find(o=>o&&o.id===orderId);if(match)setPlaced(match);}
+    }catch{}finally{setResolved(true);}};void load();
+  }, [orderId,accessToken]);
 
   if (!resolved) {
     return <div className="container-pe py-20 text-center text-[14px] text-muted">Finding your order…</div>;
@@ -55,8 +51,9 @@ export default function OrderTracking({ orderId }: { orderId: string }) {
   const placedOn = placed?.placedAt ?? order.placedOn;
   const lines = placed?.lines ?? order.lines;
   // A freshly placed order has only reached the artwork-check stage.
-  const stage = placed ? 2 : order.currentStage;
-  const status = placed ? "Artwork check" : order.status;
+  const stages:Record<string,number>={pending:0,confirmed:2,in_production:3,shipped:5,delivered:8,cancelled:0,refunded:0};
+  const stage = placed ? (stages[placed.status??"confirmed"]??2) : order.currentStage;
+  const status = placed ? (placed.status??"confirmed").replaceAll("_"," ") : order.status;
   const feed = placed
     ? [
         {
@@ -179,15 +176,15 @@ export default function OrderTracking({ orderId }: { orderId: string }) {
           <section className="border border-line p-5 lg:p-6">
             <h2 className="text-[16px] font-medium">Delivery details</h2>
             <div className="mt-4 space-y-1">
-              <p className="text-[14px]">{order.address.name}</p>
-              <p className="text-[14px] text-muted">{order.address.lines}</p>
+              <p className="text-[14px]">{placed?.address?.name??order.address.name}</p>
+              <p className="text-[14px] text-muted">{placed?.address?`${placed.address.line1}${placed.address.line2?`, ${placed.address.line2}`:""}, ${placed.address.city}, ${placed.address.state} ${placed.address.postalCode}`:order.address.lines}</p>
               <p className="text-[13px] text-muted">{order.address.speed}</p>
             </div>
             <div className="mt-4 border border-line bg-alt p-4">
               <p className="text-[14px]">{order.courier}</p>
               <p className="mt-1 flex flex-wrap items-center gap-2 text-[13px] text-muted">
-                AWB {order.awb}
-                <CopyButton value={order.awb} label="tracking number" />
+                {placed?.trackingNumber?`AWB ${placed.trackingNumber}`:"Tracking pending"}
+                {placed?.trackingNumber&&<CopyButton value={placed.trackingNumber} label="tracking number" />}
               </p>
               <p className="mt-2 text-[12px] text-muted">
                 Tracking activates once your parcel is dispatched.

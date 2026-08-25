@@ -13,11 +13,12 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+export default async function Page({ params,searchParams }: { params: Promise<{ id: string }>;searchParams:Promise<{access?:string}> }) {
   const { id } = await params;
+  const {access}=await searchParams;
   return (
     <StorefrontShell>
-        <OrderConfirmed orderId={id} />
+        <OrderConfirmed orderId={id} accessToken={access} />
     </StorefrontShell>
   );
 }

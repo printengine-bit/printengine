@@ -2,26 +2,29 @@ import { NextResponse } from "next/server";
 import { artworkProxyUrl, cloudinaryConfigured, uploadArtwork } from "@/lib/cloudinary";
 import { sessionUser } from "@/lib/auth";
 import { databaseConfigured, db } from "@/lib/db";
-
-const ALLOWED = new Set(["image/png", "image/jpeg", "image/webp", "image/svg+xml"]);
-const MAX_BYTES = 15 * 1024 * 1024;
+import { detectedImageType, MAX_ARTWORK_BYTES } from "@/lib/image-upload";
+import { rateLimit, requestIsSameOrigin, tooManyRequests } from "@/lib/security";
 
 export async function POST(request: Request) {
   if (!cloudinaryConfigured()) {
     return NextResponse.json({ error: "Artwork storage is not connected yet." }, { status: 503 });
   }
+  if (!requestIsSameOrigin(request)) return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+  if (databaseConfigured()) { const limited=await rateLimit(request,"artwork-upload",30,3600);if(!limited.allowed)return tooManyRequests(limited.retryAfter); }
   const form = await request.formData();
   const file = form.get("file");
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "Choose an artwork file." }, { status: 400 });
   }
-  if (!ALLOWED.has(file.type) || file.size > MAX_BYTES) {
-    return NextResponse.json({ error: "Use a PNG, JPG, SVG or WebP file under 15 MB." }, { status: 400 });
+  if (file.size > MAX_ARTWORK_BYTES) {
+    return NextResponse.json({ error: "Use a PNG, JPG or WebP file under 15 MB." }, { status: 400 });
   }
 
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
-    const dataUri = `data:${file.type};base64,${buffer.toString("base64")}`;
+    const detected = detectedImageType(buffer);
+    if (!detected || detected !== file.type) return NextResponse.json({ error: "The file contents are not a valid PNG, JPG or WebP image." }, { status: 400 });
+    const dataUri = `data:${detected};base64,${buffer.toString("base64")}`;
     const uploaded = await uploadArtwork(dataUri, file.name);
     const url = artworkProxyUrl(uploaded.publicId, uploaded.format);
     if (databaseConfigured()) {
