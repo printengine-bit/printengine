@@ -18,6 +18,9 @@ type PlacedOrder = {
   status?: string;
   address?: Record<string,string>;
   trackingNumber?: string|null;
+  courierName?: string|null;
+  shipmentStatus?: string|null;
+  trackingUrl?: string|null;
 };
 
 export default function OrderTracking({ orderId,accessToken }: { orderId: string;accessToken?:string }) {
@@ -181,14 +184,15 @@ export default function OrderTracking({ orderId,accessToken }: { orderId: string
               <p className="text-[13px] text-muted">{order.address.speed}</p>
             </div>
             <div className="mt-4 border border-line bg-alt p-4">
-              <p className="text-[14px]">{order.courier}</p>
+              <p className="text-[14px]">{placed?.courierName??order.courier}</p>
               <p className="mt-1 flex flex-wrap items-center gap-2 text-[13px] text-muted">
                 {placed?.trackingNumber?`AWB ${placed.trackingNumber}`:"Tracking pending"}
                 {placed?.trackingNumber&&<CopyButton value={placed.trackingNumber} label="tracking number" />}
               </p>
               <p className="mt-2 text-[12px] text-muted">
-                Tracking activates once your parcel is dispatched.
+                {placed?.shipmentStatus??"Tracking activates once your parcel is dispatched."}
               </p>
+              {placed?.trackingUrl&&<a href={placed.trackingUrl} target="_blank" rel="noreferrer" className="mt-3 inline-block text-[13px] underline underline-offset-4">Open live courier tracking</a>}
             </div>
           </section>
 

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cloudinaryConfigured } from "@/lib/cloudinary";
 import { databaseConfigured, db } from "@/lib/db";
 import { emailConfigured } from "@/lib/email";
+import { shiprocketConfigured } from "@/lib/shiprocket";
 
 export const dynamic="force-dynamic";
 
@@ -14,7 +15,7 @@ export async function GET(request:Request){
     payments:Boolean(process.env.RAZORPAY_KEY_ID&&process.env.RAZORPAY_KEY_SECRET&&process.env.RAZORPAY_WEBHOOK_SECRET),
     artwork:Boolean(process.env.OPENAI_API_KEY)&&cloudinaryConfigured(),
     email:emailConfigured(),
-    fulfilment:Boolean(process.env.SHIPROCKET_EMAIL&&process.env.SHIPROCKET_PASSWORD),
+    fulfilment:shiprocketConfigured(),
   };
   const ready=checks.database&&checks.sessions&&checks.payments&&checks.artwork&&checks.email;
   const readiness=new URL(request.url).searchParams.get("readiness")==="1";

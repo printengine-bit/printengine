@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { bookOrderShipment } from "@/lib/shiprocket";
 
 async function actor() {
   const user = await requireAdmin();
@@ -57,6 +58,15 @@ export async function updateOrder(form: FormData) {
   await db()`UPDATE orders SET status=${status}, fulfillment_status=${fulfillment}, tracking_number=${String(form.get("tracking") || "") || null}, updated_at=now() WHERE id=${id}`;
   await audit(user.id, "order.updated", "order", id);
   revalidatePath("/admin/orders");
+}
+
+export async function bookShipment(form: FormData) {
+  const user = await actor();
+  const id = String(form.get("id"));
+  const result = await bookOrderShipment(id);
+  await audit(user.id, "shipment.booked", "order", id);
+  revalidatePath("/admin/orders");
+  void result;
 }
 
 export async function createDiscount(form: FormData) {
