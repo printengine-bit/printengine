@@ -79,7 +79,7 @@ export default function ProductCard({
               <li
                 key={colour}
                 title={colour}
-                className="h-[18px] w-[18px] shrink-0 rounded-full border border-black/15 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.25)]"
+                className="relative h-[18px] w-[18px] shrink-0 rounded-full border border-black/15 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.25)]"
                 style={{ backgroundColor: hexFor(colour) }}
               >
                 <span className="sr-only">{colour}</span>

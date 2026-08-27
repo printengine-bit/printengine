@@ -39,6 +39,7 @@
 @layer base {
   html {
     -webkit-font-smoothing: antialiased;
+    overflow-x: clip;
   }
   body {
     background: #ffffff;
@@ -46,6 +47,7 @@
     font-family: var(--font-sans);
     font-size: 15px;
     line-height: 1.6;
+    overflow-x: clip;
   }
   ::selection {
     background: var(--color-lime);

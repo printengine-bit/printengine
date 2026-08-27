@@ -87,7 +87,7 @@ export default function WishlistView() {
                   <li
                     key={c}
                     title={c}
-                    className="h-3.5 w-3.5 border border-line"
+                    className="relative h-3.5 w-3.5 border border-line"
                     style={{ backgroundColor: hexFor(c) }}
                   >
                     <span className="sr-only">{c}</span>
