@@ -5,6 +5,7 @@ import { sessionUser } from "@/lib/auth";
 import { db, databaseConfigured } from "@/lib/db";
 import { METHOD_PRICE } from "@/lib/pricing";
 import { rateLimit, requestIsSameOrigin, tooManyRequests } from "@/lib/security";
+import { shippingPolicy,storeConfiguration } from "@/lib/store-configuration";
 
 const lineSchema = z.object({
   slug: z.string().min(1), colour: z.string().min(1), size: z.string().min(1),
@@ -63,7 +64,8 @@ export async function POST(request: Request) {
     const subtotal = verified.reduce((sum,x)=>sum+x.variant.price*x.line.qty,0);
     const decorationTotal = verified.reduce((sum,x)=>sum+METHOD_PRICE[x.line.method]*x.line.designs.length*x.line.qty,0);
     const quantity = verified.reduce((sum,x)=>sum+x.line.qty,0);
-    const standardShipping = subtotal >= 999 ? 0 : 79;
+    const policy=shippingPolicy((await storeConfiguration()).settings);
+    const standardShipping = subtotal >= policy.threshold ? 0 : policy.fee;
     const code = parsed.data.coupon?.trim().toUpperCase() || null;
     const discounts = await db()<Discount[]>`
       SELECT id,name,code,type,value,minimum_quantity,minimum_subtotal,buy_quantity,get_quantity,combinable

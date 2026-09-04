@@ -16,10 +16,11 @@ export default function AdminLogin() {
         setPending(true);
         setError(null);
         const data = new FormData(event.currentTarget);
+        try {
         const response = await fetch("/api/auth/login", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ email: data.get("email"), password: data.get("password") }),
+          body: JSON.stringify({ email: data.get("email"), password: data.get("password"), admin: true }),
         });
         const result = (await response.json()) as { error?: string };
         if (!response.ok) {
@@ -29,6 +30,11 @@ export default function AdminLogin() {
         }
         router.replace("/admin");
         router.refresh();
+        } catch {
+          setError("Unable to reach the sign-in service. Please try again.");
+        } finally {
+          setPending(false);
+        }
       }}
     >
       <label className="block text-[13px]">

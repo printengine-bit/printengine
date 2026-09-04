@@ -48,7 +48,7 @@ const SLIDES: Slide[] = [
   },
 ];
 
-export default function Hero() {
+export default function Hero({title,copy}:{title?:string;copy?:string}) {
   const [index, setIndex] = useState(0);
   const paused = useRef(false);
   const go = useCallback(
@@ -64,7 +64,7 @@ export default function Hero() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const slide = SLIDES[index];
+  const slide = index===0 ? {...SLIDES[0],title:title??SLIDES[0].title,copy:copy??SLIDES[0].copy} : SLIDES[index];
 
   return (
     <section

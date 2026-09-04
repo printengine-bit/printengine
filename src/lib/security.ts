@@ -3,9 +3,20 @@ import { db, databaseConfigured } from "@/lib/db";
 
 export function requestIsSameOrigin(request: Request) {
   const origin = request.headers.get("origin");
-  if (!origin) return true;
+  if (!origin) return request.headers.get("sec-fetch-site") !== "cross-site";
   try {
-    return new URL(origin).origin === new URL(request.url).origin;
+    const supplied = new URL(origin);
+    if (!["https:", "http:"].includes(supplied.protocol) || origin !== supplied.origin) return false;
+    // Railway terminates TLS before forwarding to the application. Trust an
+    // explicit public URL, never caller-controlled forwarded-host headers.
+    const configured = process.env.PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL;
+    if (configured) {
+      const trusted = new URL(configured);
+      if (!["https:", "http:"].includes(trusted.protocol)) return false;
+      if (supplied.origin === trusted.origin) return true;
+      if (process.env.NODE_ENV === "production") return false;
+    }
+    return supplied.origin === new URL(request.url).origin;
   } catch {
     return false;
   }

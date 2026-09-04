@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
+import AdminLogout from "@/components/admin/AdminLogout";
 
 const nav = [
   ["Overview", "/admin"],
@@ -13,6 +14,7 @@ const nav = [
   ["Artwork", "/admin/artwork"],
   ["Content", "/admin/content"],
   ["Settings", "/admin/settings"],
+  ["Audit log", "/admin/audit"],
 ] as const;
 
 export default async function AdminShell({ title, active, children }: { title: string; active: string; children: React.ReactNode }) {
@@ -26,7 +28,7 @@ export default async function AdminShell({ title, active, children }: { title: s
             <Image src="/brand/printengine-dark.png" alt="PrintEngine" width={500} height={200} className="h-auto w-[122px]" />
             <span className="border-l border-white/25 pl-2.5 text-[12px] uppercase tracking-[0.1em] text-white/60">Admin</span>
           </Link>
-          <div className="flex items-center gap-4 text-[12px] text-white/65"><span>{user.name}</span><Link href="/" className="text-white underline underline-offset-4">View store</Link></div>
+          <div className="flex flex-wrap items-center justify-end gap-3 text-[12px] text-white/65"><span className="hidden sm:inline">{user.name}</span><Link href="/" className="text-white underline underline-offset-4">View store</Link><AdminLogout /></div>
         </div>
       </header>
       <div className="lg:grid lg:grid-cols-[220px_minmax(0,1fr)]">

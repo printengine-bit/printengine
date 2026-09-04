@@ -16,6 +16,11 @@ const contentSecurityPolicy = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  experimental: {
+    serverActions: {
+      allowedOrigins: [new URL(process.env.PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://printengine.in").host],
+    },
+  },
   poweredByHeader: false,
   compress: true,
   async headers() {

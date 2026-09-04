@@ -9,14 +9,15 @@ import TechniqueSplit from "@/components/home/TechniqueSplit";
 import TrustStrip from "@/components/home/TrustStrip";
 import Reviews from "@/components/home/Reviews";
 import { commerceProducts } from "@/lib/commerce-catalog";
+import { storeConfiguration } from "@/lib/store-configuration";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const products = await commerceProducts();
+  const [products,{content}]=await Promise.all([commerceProducts(),storeConfiguration()]);
   return (
-    <StorefrontShell>
-        <Hero />
+    <StorefrontShell announcement={content.announcement}>
+        <Hero title={content.hero_title} copy={content.hero_body} />
         <CategoryGrid />
         <StudioBand />
         <Bestsellers products={products} />

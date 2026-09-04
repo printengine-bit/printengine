@@ -6,7 +6,7 @@ type PaidOrder = { id:string;number:string;email:string;grand_total:number;payme
 export async function markOrderPaid(razorpayOrderId:string,paymentId:string|null,internalOrderId?:string){
   const result=await db().begin(async sql=>{
     const rows=await sql<PaidOrder[]>`SELECT id,number,email,grand_total,payment_status,discount_id,reservation_released FROM orders WHERE razorpay_order_id=${razorpayOrderId} AND (${internalOrderId??null}::uuid IS NULL OR id=${internalOrderId??null}::uuid) FOR UPDATE`;
-    const order=rows[0];if(!order)return null;if(order.payment_status==='paid')return {order,newlyPaid:false};
+    const order=rows[0];if(!order)throw new Error("Payment order not found; retry after order creation completes.");if(['paid','refunded','partially_refunded'].includes(order.payment_status))return {order,newlyPaid:false};
     const rowsByItem=await sql<Array<{variant_id:string;quantity:number;stock:number}>>`SELECT i.variant_id,i.quantity,v.stock FROM order_items i JOIN product_variants v ON v.id=i.variant_id WHERE i.order_id=${order.id} ORDER BY i.variant_id FOR UPDATE OF v`;
     const itemMap=new Map<string,{variant_id:string;quantity:number;stock:number}>();
     for(const row of rowsByItem){const current=itemMap.get(row.variant_id);if(current)current.quantity+=row.quantity;else itemMap.set(row.variant_id,{...row});}

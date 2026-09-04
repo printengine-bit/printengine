@@ -18,8 +18,10 @@ function loadRazorpay(){
   return new Promise<void>((resolve,reject)=>{const script=document.createElement("script");script.src="https://checkout.razorpay.com/v1/checkout.js";script.onload=()=>resolve();script.onerror=()=>reject(new Error("Razorpay could not be loaded."));document.head.appendChild(script);});
 }
 
-export default function CheckoutView() {
-  const { hydrated, lines, totals, coupon, itemCount, clearCart } = useCart();
+export default function CheckoutView({shippingPolicy={threshold:999,fee:79}}:{shippingPolicy?:{threshold:number;fee:number}}) {
+  const { hydrated, lines, totals:cartTotals, coupon, itemCount, clearCart } = useCart();
+  const shipping=cartTotals.subtotal>=shippingPolicy.threshold||!lines.length?0:shippingPolicy.fee;
+  const totals={...cartTotals,shipping,total:Math.max(0,cartTotals.total-cartTotals.shipping+shipping)};
   const router = useRouter();
   const [consent, setConsent] = useState(false);
   const [pending, setPending] = useState(false);
