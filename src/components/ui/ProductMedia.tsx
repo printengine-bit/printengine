@@ -87,6 +87,26 @@ const SPRITE_SOURCES: Partial<Record<GarmentKind, string>> = {
   apron: "/products/views/apron-alpha.png?v=2",
 };
 
+// New catalogue silhouettes use their approved model photography until a
+// dedicated four-angle production shoot is supplied. Their PDP/studio views
+// are intentionally limited to the truthful front image.
+const FULL_FRAME_VIEWS: Partial<Record<GarmentKind, string>> = {
+  cargo: "/products/covers/cargo-pants.png",
+  varsity: "/products/covers/varsity-jacket.png",
+  basketball: "/products/covers/basketball-jersey.png",
+  cap: "/products/covers/premium-cap.png",
+  tote: "/products/covers/tote-bag.png",
+  sling: "/products/covers/crossbody-bag.png",
+  socks: "/products/covers/crew-socks.png",
+  "medical-tunic": "/products/covers/piped-medical-tunic.png",
+  "medical-wrap-tunic": "/products/covers/side-button-medical-tunic.png",
+  "mens-short-lab-coat": "/products/covers/mens-short-lab-coat.png",
+  "womens-short-lab-coat": "/products/covers/womens-short-lab-coat.png",
+  "scrub-set": "/products/covers/maroon-scrub-set.png",
+};
+
+export const hasFourViewMedia = (kind: GarmentKind) => !FULL_FRAME_VIEWS[kind];
+
 function loadSource(src: string, priority: boolean) {
   const existing = sourceImages.get(src);
   if (existing) return Promise.resolve(existing);
@@ -403,6 +423,7 @@ export function GarmentPhoto({
 }) {
   const photo = PHOTO_VIEWS[kind]?.[area];
   const sprite = SPRITE_SOURCES[kind];
+  const fullFrame = FULL_FRAME_VIEWS[kind];
   const position = VIEW_POSITION[area];
   // The supplied hoodie has real opposite-side photographs. The generated
   // tee, polo and jersey side sources were shot facing the same direction,
@@ -416,7 +437,16 @@ export function GarmentPhoto({
       role="img"
       aria-label={`${name}, ${area === "left" || area === "right" ? `${area} side` : area} view`}
     >
-      {photo ? (
+      {fullFrame ? (
+        <Image
+          src={fullFrame}
+          alt=""
+          fill
+          priority={priority}
+          sizes="(max-width: 1024px) 100vw, 55vw"
+          className="pointer-events-none select-none object-contain object-top p-[2%]"
+        />
+      ) : photo ? (
         <RecolouredGarment
           src={photo}
           colour={colour}

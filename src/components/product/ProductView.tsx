@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { GarmentPhoto } from "@/components/ui/ProductMedia";
+import { GarmentPhoto, hasFourViewMedia } from "@/components/ui/ProductMedia";
 import DesignRender from "@/components/product/DesignRender";
 import DesignStudio from "@/components/product/DesignStudio";
 import { Heart, Star, Truck } from "@/components/ui/icons";
@@ -82,8 +82,9 @@ export default function ProductView({ product }: { product: Product }) {
   }, [product.kind, product.sizes]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  const current = AREAS.find((a) => a.id === area)!;
-  const decorated = AREAS.filter((a) => designs[a.id]);
+  const productAreas = hasFourViewMedia(product.kind) ? AREAS : AREAS.slice(0, 1);
+  const current = productAreas.find((a) => a.id === area) ?? productAreas[0];
+  const decorated = productAreas.filter((a) => designs[a.id]);
   const decorationTotal = decorated.length * METHOD_PRICE[method];
   const total = (product.price + decorationTotal) * qty;
 
@@ -147,7 +148,7 @@ export default function ProductView({ product }: { product: Product }) {
     <div className="container-pe grid grid-cols-[minmax(0,1fr)] gap-10 pb-12 pt-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-14">
       <div className="min-w-0">
         <div className="grid grid-cols-4 gap-1.5 sm:flex sm:flex-wrap sm:gap-2" role="tablist" aria-label="Print placement">
-          {AREAS.map((a) => (
+          {productAreas.map((a) => (
             <button
               key={a.id}
               type="button"
@@ -216,7 +217,7 @@ export default function ProductView({ product }: { product: Product }) {
         </div>
 
         <ul className="mt-4 grid grid-cols-4 gap-3">
-          {AREAS.map((a) => (
+          {productAreas.map((a) => (
             <li key={a.id}>
               <button
                 type="button"

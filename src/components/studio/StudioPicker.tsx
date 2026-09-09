@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import DesignRender from "@/components/product/DesignRender";
 import DesignStudio, { type Tab } from "@/components/product/DesignStudio";
-import { GarmentPhoto, ProductCover } from "@/components/ui/ProductMedia";
+import { GarmentPhoto, hasFourViewMedia, ProductCover } from "@/components/ui/ProductMedia";
 import { AREAS, VIEWBOX, type AreaId, type Design } from "@/lib/design";
 import { hexFor, inr, type Product } from "@/lib/catalog";
 import { writePending } from "@/lib/designs-store";
@@ -36,8 +36,9 @@ export default function StudioPicker({catalog}:{catalog:Product[]}) {
     tabParam === "upload" ? "Upload artwork" : tabParam === "text" ? "Add text" : "Generate with AI";
 
   const product = catalog.find((p) => p.slug === slug)!;
-  const current = AREAS.find((a) => a.id === area)!;
-  const decorated = AREAS.filter((a) => designs[a.id]);
+  const productAreas = hasFourViewMedia(product.kind) ? AREAS : AREAS.slice(0, 1);
+  const current = productAreas.find((a) => a.id === area) ?? productAreas[0];
+  const decorated = productAreas.filter((a) => designs[a.id]);
   const visiblePicks = showAll
     ? PICKS
     : Array.from(new Set([slug, ...PICKS])).slice(0, 6);
@@ -135,7 +136,7 @@ export default function StudioPicker({catalog}:{catalog:Product[]}) {
           </div>
 
           <div className="mt-5 grid grid-cols-4 gap-1.5 sm:flex sm:flex-wrap sm:gap-2" role="tablist" aria-label="Print placement">
-            {AREAS.map((a) => (
+            {productAreas.map((a) => (
               <button
                 key={a.id}
                 type="button"

@@ -139,7 +139,7 @@ export default function FilterPanel({
                 aria-pressed={on}
                 onClick={() => toggle("sizes", s)}
                 className={
-                  "h-9 w-11 border text-[13px] transition-colors " +
+                  "h-9 min-w-11 border px-2 text-[13px] transition-colors " +
                   (on ? "border-ink bg-ink text-white" : "border-line bg-white hover:border-ink")
                 }
               >

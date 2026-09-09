@@ -7,6 +7,9 @@ export type CategorySlug =
   | "hoodies"
   | "sweatshirts"
   | "jerseys"
+  | "streetwear"
+  | "sports"
+  | "accessories"
   | "doctor-aprons";
 
 export type Colour = { name: string; hex: string };
@@ -20,9 +23,13 @@ export const COLOURS: Colour[] = [
   { name: "Maroon", hex: "#6b1f2a" },
   { name: "Bottle green", hex: "#14532d" },
   { name: "Mustard", hex: "#c8951a" },
+  { name: "Off-white", hex: "#f2efe6" },
+  { name: "Brown", hex: "#654236" },
+  { name: "Charcoal", hex: "#333333" },
+  { name: "Natural", hex: "#e7dfcf" },
 ];
 
-export const SIZES = ["S", "M", "L", "XL", "XXL"] as const;
+export const SIZES = ["S", "M", "L", "XL", "XXL", "One size"] as const;
 export type Size = (typeof SIZES)[number];
 
 export type Product = {
@@ -332,6 +339,208 @@ export const products: Product[] = [
     methods: ["Embroidery"],
     stock: 4,
   },
+  {
+    slug: "oversized-black",
+    name: "Oversized Black t-shirt",
+    subtitle: "240 gsm premium combed cotton",
+    price: 799, mrp: 1099, kind: "oversized", category: "t-shirts",
+    audience: ["Men", "Women"], fit: "Oversized", gsm: 240,
+    colours: ["Black"], sizes: ALL, methods: ["Custom print"], isNew: true,
+  },
+  {
+    slug: "oversized-off-white",
+    name: "Oversized Off-white t-shirt",
+    subtitle: "240 gsm premium combed cotton",
+    price: 799, mrp: 1099, kind: "oversized", category: "t-shirts",
+    audience: ["Men", "Women"], fit: "Oversized", gsm: 240,
+    colours: ["Off-white"], sizes: ALL, methods: ["Custom print"], isNew: true,
+  },
+  {
+    slug: "oversized-grey",
+    name: "Oversized Grey t-shirt",
+    subtitle: "240 gsm premium combed cotton",
+    price: 799, mrp: 1099, kind: "oversized", category: "t-shirts",
+    audience: ["Men", "Women"], fit: "Oversized", gsm: 240,
+    colours: ["Grey melange"], sizes: ALL, methods: ["Custom print"], isNew: true,
+  },
+  {
+    slug: "oversized-olive",
+    name: "Oversized Olive t-shirt",
+    subtitle: "240 gsm premium combed cotton",
+    price: 799, mrp: 1099, kind: "oversized", category: "t-shirts",
+    audience: ["Men", "Women"], fit: "Oversized", gsm: 240,
+    colours: ["Olive"], sizes: ALL, methods: ["Custom print"], isNew: true,
+  },
+  {
+    slug: "oversized-brown",
+    name: "Oversized Brown t-shirt",
+    subtitle: "240 gsm premium combed cotton",
+    price: 849, mrp: 1149, kind: "oversized", category: "t-shirts",
+    audience: ["Men", "Women"], fit: "Oversized", gsm: 240,
+    colours: ["Brown"], sizes: ALL, methods: ["Custom print"], isNew: true,
+  },
+  {
+    slug: "oversized-navy",
+    name: "Oversized Navy t-shirt",
+    subtitle: "240 gsm premium combed cotton",
+    price: 799, mrp: 1099, kind: "oversized", category: "t-shirts",
+    audience: ["Men", "Women"], fit: "Oversized", gsm: 240,
+    colours: ["Navy"], sizes: ALL, methods: ["Custom print"], isNew: true,
+  },
+  {
+    slug: "vintage-washed-tee",
+    name: "Vintage Washed t-shirt",
+    subtitle: "260 gsm mineral-washed cotton",
+    price: 999, mrp: 1399, kind: "oversized", category: "t-shirts",
+    audience: ["Men", "Women"], fit: "Oversized", gsm: 260,
+    colours: ["Charcoal"], sizes: ALL, methods: ["Custom print"], bestseller: true,
+  },
+  {
+    slug: "minimal-logo-tee",
+    name: "Minimal Logo Tee",
+    subtitle: "200 gsm compact cotton, chest mark",
+    price: 749, mrp: 999, kind: "tee-half", category: "t-shirts",
+    audience: ["Men", "Women"], fit: "Regular", gsm: 200,
+    colours: ["Navy"], sizes: ALL, methods: ["Custom print"], isNew: true,
+  },
+  {
+    slug: "streetwear-oversized-hoodie",
+    name: "Oversized hoodie",
+    subtitle: "420 gsm heavyweight brushed fleece",
+    price: 1699, mrp: 2299, kind: "hoodie", category: "streetwear",
+    audience: ["Men", "Women"], fit: "Oversized", gsm: 420,
+    colours: ["Bottle green", "Black", "Olive"], sizes: ALL,
+    methods: ["Custom print", "Embroidery"], bestseller: true,
+  },
+  {
+    slug: "boxy-sweatshirt",
+    name: "Boxy sweatshirt",
+    subtitle: "360 gsm structured loopback cotton",
+    price: 1399, mrp: 1899, kind: "sweatshirt", category: "streetwear",
+    audience: ["Men", "Women"], fit: "Boxy", gsm: 360,
+    colours: ["Mustard", "Black", "Olive", "Grey melange"], sizes: ALL,
+    methods: ["Custom print", "Embroidery"], isNew: true,
+  },
+  {
+    slug: "cargo-pants",
+    name: "Cargo pants",
+    subtitle: "Relaxed utility twill with six pockets",
+    price: 1499, mrp: 1999, kind: "cargo", category: "streetwear",
+    audience: ["Men", "Women"], fit: "Relaxed", gsm: 280,
+    colours: ["Olive"], sizes: ALL, methods: ["Embroidery"], isNew: true,
+  },
+  {
+    slug: "varsity-jacket",
+    name: "Varsity jacket",
+    subtitle: "Wool-touch body with contrast sleeves",
+    price: 2499, mrp: 3299, kind: "varsity", category: "streetwear",
+    audience: ["Men", "Women"], fit: "Regular", gsm: 420,
+    colours: ["Black"], sizes: ALL, methods: ["Embroidery"], isNew: true,
+  },
+  {
+    slug: "pro-football-jersey",
+    name: "Football jersey",
+    subtitle: "140 gsm breathable match mesh",
+    price: 899, mrp: 1199, kind: "jersey", category: "sports",
+    audience: ["Men", "Women", "Kids"], fit: "Athletic", gsm: 140,
+    colours: ["Navy", "Black", "Mustard"], sizes: ALL, methods: ["Custom print"],
+  },
+  {
+    slug: "basketball-jersey",
+    name: "Basketball jersey",
+    subtitle: "Breathable mesh jersey and shorts set",
+    price: 1099, mrp: 1499, kind: "basketball", category: "sports",
+    audience: ["Men", "Women", "Kids"], fit: "Athletic", gsm: 150,
+    colours: ["Navy"], sizes: ALL, methods: ["Custom print"], isNew: true,
+  },
+  {
+    slug: "oversized-sports-tee",
+    name: "Oversized sports tee",
+    subtitle: "180 gsm quick-dry performance knit",
+    price: 849, mrp: 1149, kind: "oversized", category: "sports",
+    audience: ["Men", "Women"], fit: "Oversized", gsm: 180,
+    colours: ["Olive", "Black", "Navy"], sizes: ALL, methods: ["Custom print"],
+  },
+  {
+    slug: "dry-fit-gym-tee",
+    name: "Dry-fit gym tee",
+    subtitle: "160 gsm moisture-wicking performance mesh",
+    price: 699, mrp: 949, kind: "tee-half", category: "sports",
+    audience: ["Men", "Women"], fit: "Athletic", gsm: 160,
+    colours: ["Navy", "Black", "Bottle green"], sizes: ALL, methods: ["Custom print"],
+  },
+  {
+    slug: "premium-cap",
+    name: "Premium cap",
+    subtitle: "Six-panel cotton cap with adjustable strap",
+    price: 499, mrp: 699, kind: "cap", category: "accessories",
+    audience: ["Men", "Women"], fit: "Adjustable", gsm: 0,
+    colours: ["Black"], sizes: ["One size"], methods: ["Embroidery"], isNew: true,
+  },
+  {
+    slug: "tote-bag",
+    name: "Tote bag",
+    subtitle: "Heavy natural canvas with reinforced handles",
+    price: 449, mrp: 649, kind: "tote", category: "accessories",
+    audience: ["Men", "Women"], fit: "One size", gsm: 320,
+    colours: ["Natural"], sizes: ["One size"], methods: ["Custom print", "Embroidery"],
+  },
+  {
+    slug: "crossbody-bag",
+    name: "Sling / crossbody bag",
+    subtitle: "Water-resistant compact everyday bag",
+    price: 799, mrp: 1099, kind: "sling", category: "accessories",
+    audience: ["Men", "Women"], fit: "Adjustable", gsm: 0,
+    colours: ["Black"], sizes: ["One size"], methods: ["Custom print", "Embroidery"],
+  },
+  {
+    slug: "crew-socks",
+    name: "Crew socks",
+    subtitle: "Cushioned combed-cotton crew socks",
+    price: 299, mrp: 449, kind: "socks", category: "accessories",
+    audience: ["Men", "Women"], fit: "Stretch", gsm: 0,
+    colours: ["White"], sizes: ["M", "L"], methods: ["Embroidery"],
+  },
+  {
+    slug: "piped-medical-tunic",
+    name: "Piped medical tunic",
+    subtitle: "Short-sleeve poly-cotton tunic with navy piping",
+    price: 899, mrp: 1199, kind: "medical-tunic", category: "doctor-aprons",
+    audience: ["Men"], fit: "Regular", gsm: 190,
+    colours: ["White"], sizes: ALL, methods: ["Embroidery"], isNew: true,
+  },
+  {
+    slug: "side-button-medical-tunic",
+    name: "Side-button medical tunic",
+    subtitle: "Asymmetric nurse tunic with contrast piping",
+    price: 999, mrp: 1349, kind: "medical-wrap-tunic", category: "doctor-aprons",
+    audience: ["Women"], fit: "Regular", gsm: 190,
+    colours: ["White"], sizes: ALL, methods: ["Embroidery"], isNew: true,
+  },
+  {
+    slug: "mens-short-lab-coat",
+    name: "Men's short lab coat",
+    subtitle: "Short-sleeve three-pocket clinical coat",
+    price: 1049, mrp: 1399, kind: "mens-short-lab-coat", category: "doctor-aprons",
+    audience: ["Men"], fit: "Regular", gsm: 200,
+    colours: ["White"], sizes: ALL, methods: ["Embroidery"],
+  },
+  {
+    slug: "womens-short-lab-coat",
+    name: "Women's short lab coat",
+    subtitle: "Tailored short coat with two patch pockets",
+    price: 1049, mrp: 1399, kind: "womens-short-lab-coat", category: "doctor-aprons",
+    audience: ["Women"], fit: "Regular", gsm: 200,
+    colours: ["White"], sizes: ALL, methods: ["Embroidery"],
+  },
+  {
+    slug: "maroon-scrub-set",
+    name: "Maroon scrub set",
+    subtitle: "V-neck scrub top with straight-leg trousers",
+    price: 1399, mrp: 1899, kind: "scrub-set", category: "doctor-aprons",
+    audience: ["Men", "Women"], fit: "Regular", gsm: 180,
+    colours: ["Maroon"], sizes: ALL, methods: ["Embroidery"], bestseller: true,
+  },
 ];
 
 export const categories: {
@@ -374,9 +583,33 @@ export const categories: {
       "Polyester built for full-surface sublimation, which means edge-to-edge colour with no hand feel. The right pick for team kits with names, numbers and sponsor panels.",
   },
   {
+    slug: "streetwear",
+    name: "Streetwear",
+    subtitle: "Heavyweight relaxed essentials",
+    kind: "varsity",
+    blurb:
+      "Structured, oversized staples made for bold placements and durable embroidery: heavyweight hoodies, boxy sweats, cargo trousers and varsity jackets.",
+  },
+  {
+    slug: "sports",
+    name: "Sports",
+    subtitle: "Team and training kits",
+    kind: "basketball",
+    blurb:
+      "Breathable performance fabrics for match day and training, ready for team colours, player names, numbers and sponsor artwork.",
+  },
+  {
+    slug: "accessories",
+    name: "Accessories",
+    subtitle: "Caps, bags and socks",
+    kind: "cap",
+    blurb:
+      "Useful everyday pieces with clean decoration areas for embroidered marks, small logos and durable custom prints.",
+  },
+  {
     slug: "doctor-aprons",
-    name: "Doctor aprons",
-    subtitle: "Name embroidery",
+    name: "Medical uniforms",
+    subtitle: "Coats, tunics and scrubs",
     kind: "apron",
     blurb:
       "Poly-cotton coats built for daily hospital laundering. We embroider names, designations and clinic logos in thread that survives hundreds of hot washes.",

@@ -8,6 +8,9 @@ const CATEGORY_COVERS: Record<string, { slug: string; name: string }> = {
   hoodies: { slug: "fleece-hoodie", name: "Fleece hoodie" },
   sweatshirts: { slug: "crew-sweatshirt", name: "Crew neck sweatshirt" },
   jerseys: { slug: "dry-fit-jersey", name: "Dry-fit jersey" },
+  streetwear: { slug: "varsity-jacket", name: "Varsity jacket" },
+  sports: { slug: "basketball-jersey", name: "Basketball jersey" },
+  accessories: { slug: "premium-cap", name: "Premium cap" },
   "doctor-aprons": { slug: "doctor-apron", name: "Doctor apron" },
 };
 
@@ -21,7 +24,7 @@ export default function CategoryGrid() {
               Shop by category
             </h2>
             <p className="mt-2 text-[15px] text-muted">
-              Seven products, three fits, four print areas.
+              Apparel, teamwear, accessories and medical uniforms—ready to customise.
             </p>
           </div>
           <Link
@@ -32,7 +35,7 @@ export default function CategoryGrid() {
           </Link>
         </div>
 
-        <ul className="mt-10 grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-5 lg:gap-6">
+        <ul className="mt-10 grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-4 lg:gap-6">
           {categories.map((c) => (
             <li key={c.slug}>
               <Link href={`/shop/${c.slug}`} className="group block">
