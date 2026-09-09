@@ -8,8 +8,19 @@ export const adminSchemas = {
   createProduct: z.object({ name: text, slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use a lowercase, hyphen-separated slug."), subtitle: z.string().max(500), category: z.enum(["t-shirts","hoodies","sweatshirts","jerseys","streetwear","sports","accessories","doctor-aprons"]), kind: z.enum(["tee-half","tee-full","polo","oversized","hoodie","sweatshirt","jersey","henley","apron","cargo","varsity","basketball","cap","tote","sling","socks","medical-tunic","medical-wrap-tunic","mens-short-lab-coat","womens-short-lab-coat","scrub-set"]), fit: text, gsm: integer, price: integer, mrp: integer, ...variant }).refine(v=>v.mrp>=v.price,{message:"MRP cannot be lower than the selling price."}),
   createVariant: z.object({productId:id,...variant}),
   updateProduct: z.object({id,price:integer,compareAt:integer,status:z.enum(["draft","active","archived"])}).refine(v=>v.compareAt>=v.price,{message:"MRP cannot be lower than the selling price."}),
+  updateProductDetails: z.object({
+    id,name:text,slug:z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use a lowercase, hyphen-separated slug."),
+    subtitle:z.string().max(500),description:z.string().max(10000),
+    category:z.enum(["t-shirts","hoodies","sweatshirts","jerseys","streetwear","sports","accessories","doctor-aprons"]),
+    kind:z.enum(["tee-half","tee-full","polo","oversized","hoodie","sweatshirt","jersey","henley","apron","cargo","varsity","basketball","cap","tote","sling","socks","medical-tunic","medical-wrap-tunic","mens-short-lab-coat","womens-short-lab-coat","scrub-set"]),
+    fit:text,gsm:integer,price:integer,compareAt:integer,status:z.enum(["draft","active","archived"]),
+    audienceMen:z.string().optional(),audienceWomen:z.string().optional(),audienceKids:z.string().optional(),
+    methodPrint:z.string().optional(),methodEmbroidery:z.string().optional(),featured:z.string().optional(),isNew:z.string().optional(),
+  }).refine(v=>v.compareAt>=v.price,{message:"MRP cannot be lower than the selling price."}),
+  updateVariant:z.object({id,productId:id,sku:z.string().trim().min(1).max(100).regex(/^[A-Z0-9-]+$/i,"SKU may contain letters, numbers and hyphens only."),...variant,lowStockAt:integer,price:z.string().regex(/^$|^\d+$/,"Use a non-negative whole number or leave price blank."),active:z.string().optional()}),
   updateInventory: z.object({id,stock:integer}),
   updateOrder: z.object({id,status:z.enum(["pending","confirmed","in_production","shipped","delivered"]),fulfillment:z.enum(["unfulfilled","processing","fulfilled","returned"]),tracking:z.string().trim().max(120)}),
+  saveOrderNote:z.object({id,note:z.string().trim().max(2000)}),
   bookShipment: z.object({id}),
   createDiscount: z.object({name:text,code:z.string().regex(/^[a-z0-9_-]*$/i).max(50),type:z.enum(["percentage","fixed","free_shipping","buy_x_get_y"]),value:integer,minimumQuantity:integer,minimumSubtotal:integer,buyQuantity:integer.optional(),getQuantity:integer.optional()}).superRefine((v,ctx)=>{
     if(v.type==="percentage" && (v.value<1||v.value>100))ctx.addIssue({code:"custom",message:"Percentage discounts must be between 1 and 100."});

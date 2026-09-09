@@ -17,6 +17,18 @@ describe("admin input boundaries",()=>{
     expect(adminSchemas.createDiscount.safeParse({...data,buyQuantity:"2",getQuantity:"1"}).success).toBe(true);
   });
   it("does not let a status update pretend to issue a refund",()=>expect(adminSchemas.updateOrder.safeParse({id,status:"refunded",fulfillment:"returned",tracking:""}).success).toBe(false));
+  it("validates complete product edits",()=>{
+    const product={id,name:"Heavy Tee",slug:"heavy-tee",subtitle:"240 gsm",description:"A durable tee.",category:"t-shirts",kind:"oversized",fit:"Relaxed",gsm:"240",price:"799",compareAt:"1099",status:"active",audienceMen:"on",methodPrint:"on"};
+    expect(adminSchemas.updateProductDetails.safeParse(product).success).toBe(true);
+    expect(adminSchemas.updateProductDetails.safeParse({...product,slug:"Heavy Tee"}).success).toBe(false);
+    expect(adminSchemas.updateProductDetails.safeParse({...product,compareAt:"500"}).success).toBe(false);
+  });
+  it("validates variant controls and optional override prices",()=>{
+    const variant={id,productId:id,sku:"PE-HEAVY-TEE-BLACK-M",colour:"Black",colourHex:"#0a0a0a",size:"M",stock:"10",lowStockAt:"3",price:"",active:"on"};
+    expect(adminSchemas.updateVariant.safeParse(variant).success).toBe(true);
+    expect(adminSchemas.updateVariant.safeParse({...variant,price:"12.5"}).success).toBe(false);
+    expect(adminSchemas.updateVariant.safeParse({...variant,colourHex:"black"}).success).toBe(false);
+  });
 });
 describe("order progression",()=>{
   it("requires paid confirmation",()=>expect(orderUpdateError({status:"pending",payment_status:"pending"},"confirmed","processing","")).toMatch(/Payment/));

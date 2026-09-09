@@ -1,5 +1,6 @@
 import AdminForm from "@/components/admin/AdminForm";
 import AdminShell from "@/components/admin/AdminShell";
+import Link from "next/link";
 import { createProduct, updateProduct } from "@/app/admin/actions";
 import { adminPageUser, money } from "@/lib/admin";
 import { db } from "@/lib/db";
@@ -64,11 +65,11 @@ export default async function Page() {
         {rows.map((product) => (
           <AdminForm action={updateProduct} key={product.id} className="grid gap-4 border border-line bg-white p-5 lg:grid-cols-[minmax(220px,1fr)_120px_120px_140px_auto] lg:items-end">
             <input type="hidden" name="id" value={product.id}/>
-            <div><p className="font-medium">{product.name}</p><p className="mt-1 text-[12px] text-muted">{product.slug} · {product.category} · {product.variants} variants · {product.stock} units</p></div>
+            <div><Link href={`/admin/products/${product.id}`} className="font-medium underline-offset-4 hover:underline">{product.name}</Link><p className="mt-1 text-[12px] text-muted">{product.slug} · {product.category} · {product.variants} variants · {product.stock} units</p></div>
             <label className="text-[11px] text-muted">Selling price<input name="price" type="number" min="0" defaultValue={product.base_price} className={fieldClass}/></label>
             <label className="text-[11px] text-muted">MRP<input name="compareAt" type="number" min="0" defaultValue={product.compare_at_price} className={fieldClass}/></label>
             <label className="text-[11px] text-muted">Status<select name="status" defaultValue={product.status} className={fieldClass}><option>active</option><option>draft</option><option>archived</option></select></label>
-            <button className="h-10 bg-ink px-5 text-[12px] text-white">Save</button>
+            <div className="flex gap-2"><Link href={`/admin/products/${product.id}`} className="flex h-10 items-center border border-ink px-4 text-[12px]">Manage</Link><button className="h-10 bg-ink px-5 text-[12px] text-white">Quick save</button></div>
             <span className="sr-only">Current price {money(product.base_price)}</span>
           </AdminForm>
         ))}
