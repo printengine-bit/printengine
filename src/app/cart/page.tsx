@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import StorefrontShell from "@/components/layout/StorefrontShell";
 import CartView from "@/components/cart/CartView";
+import { commerceProducts } from "@/lib/commerce-catalog";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Your cart",
@@ -9,7 +12,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function Page() {
+export default async function Page() {
+  const products = await commerceProducts();
   return (
     <StorefrontShell>
         <div className="container-pe pb-8 pt-6">
@@ -26,7 +30,7 @@ export default function Page() {
           </nav>
           <h1 className="mt-6 text-h1m lg:text-h1">Your cart</h1>
         </div>
-        <CartView />
+        <CartView products={products} />
     </StorefrontShell>
   );
 }

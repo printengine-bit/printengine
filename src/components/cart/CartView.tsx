@@ -6,10 +6,11 @@ import Garment from "@/components/ui/Garment";
 import ProductCard from "@/components/ui/ProductCard";
 import DesignRender from "@/components/product/DesignRender";
 import { ArrowRight, Bag, Close, Lock, Repeat, Truck } from "@/components/ui/icons";
-import { hexFor, inr, products } from "@/lib/catalog";
+import { hexFor, inr, type Product } from "@/lib/catalog";
 import { lineTotal, productFor, useCart } from "@/lib/cart-store";
+import { cartTotals } from "@/lib/pricing";
 
-export default function CartView() {
+export default function CartView({ products }: { products: Product[] }) {
   const {
     hydrated,
     lines,
@@ -20,13 +21,14 @@ export default function CartView() {
     coupon: applied,
     applyCoupon: applyCode,
     clearCoupon,
-    totals,
+    express,
     itemCount,
   } = useCart();
 
   const [coupon, setCoupon] = useState("");
   const [couponError, setCouponError] = useState<string | null>(null);
 
+  const totals = cartTotals(lines, { coupon: applied, express }, products);
   const garmentSubtotal = totals.subtotal;
   const decorationTotal = totals.decoration;
   const total = totals.total;
@@ -140,7 +142,7 @@ export default function CartView() {
 
           <ul>
             {lines.map((l) => {
-              const p = productFor(l.slug);
+              const p = productFor(l.slug, products);
               if (!p) return null;
               return (
                 <li key={l.id} className="border-b border-line py-6">
@@ -159,7 +161,7 @@ export default function CartView() {
                             {p.name}
                           </Link>
                         </h3>
-                        <p className="text-[15px] font-medium">{inr(lineTotal(l))}</p>
+                        <p className="text-[15px] font-medium">{inr(lineTotal(l, products))}</p>
                       </div>
 
                       <p className="mt-1 flex flex-wrap items-center gap-2 text-[13px] text-muted">

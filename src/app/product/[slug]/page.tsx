@@ -20,7 +20,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
-  const p = products.find((x) => x.slug === slug);
+  const p = (await commerceProducts()).find((x) => x.slug === slug);
   if (!p) return {};
   const description = `${p.name} — ${p.subtitle}. Add your own print or generate one with AI, on the front, back or either sleeve. From ₹${p.price} with 48-hour dispatch.`;
   return detailMetadata(p.name, description, `/product/${p.slug}`);
@@ -78,7 +78,7 @@ export default async function Page({ params }: Params) {
           <ProductView product={product} />
         </Suspense>
         <ProductInfo product={product} related={related} />
-        <RecentlyViewed currentSlug={product.slug} />
+        <RecentlyViewed currentSlug={product.slug} products={liveProducts} />
     </StorefrontShell>
   );
 }

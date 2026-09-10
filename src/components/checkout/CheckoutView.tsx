@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import Garment from "@/components/ui/Garment";
 import DesignRender from "@/components/product/DesignRender";
 import { ArrowRight, Lock, Repeat, Truck } from "@/components/ui/icons";
-import { inr } from "@/lib/catalog";
+import { inr, type Product } from "@/lib/catalog";
 import { lineTotal, productFor, useCart } from "@/lib/cart-store";
+import { cartTotals as calculateCartTotals } from "@/lib/pricing";
 
 type RazorpayResult={razorpay_order_id:string;razorpay_payment_id:string;razorpay_signature:string};
 type RazorpayOptions={key:string;amount?:number;currency?:string;name:string;description?:string;order_id:string;prefill:Record<string,string>;theme:Record<string,string>;handler:(result:RazorpayResult)=>void;modal:{ondismiss:()=>void}};
@@ -18,10 +19,11 @@ function loadRazorpay(){
   return new Promise<void>((resolve,reject)=>{const script=document.createElement("script");script.src="https://checkout.razorpay.com/v1/checkout.js";script.onload=()=>resolve();script.onerror=()=>reject(new Error("Razorpay could not be loaded."));document.head.appendChild(script);});
 }
 
-export default function CheckoutView({shippingPolicy={threshold:999,fee:79}}:{shippingPolicy?:{threshold:number;fee:number}}) {
-  const { hydrated, lines, totals:cartTotals, coupon, itemCount, clearCart } = useCart();
-  const shipping=cartTotals.subtotal>=shippingPolicy.threshold||!lines.length?0:shippingPolicy.fee;
-  const totals={...cartTotals,shipping,total:Math.max(0,cartTotals.total-cartTotals.shipping+shipping)};
+export default function CheckoutView({shippingPolicy={threshold:999,fee:79},products}:{shippingPolicy?:{threshold:number;fee:number};products:Product[]}) {
+  const { hydrated, lines, coupon, itemCount, clearCart } = useCart();
+  const priced=calculateCartTotals(lines,{coupon},products);
+  const shipping=priced.subtotal>=shippingPolicy.threshold||!lines.length?0:shippingPolicy.fee;
+  const totals={...priced,shipping,total:Math.max(0,priced.total-priced.shipping+shipping)};
   const router = useRouter();
   const [consent, setConsent] = useState(false);
   const [pending, setPending] = useState(false);
@@ -109,7 +111,7 @@ export default function CheckoutView({shippingPolicy={threshold:999,fee:79}}:{sh
 
           <ul className="mt-6 divide-y divide-line border-y border-line">
             {lines.map((line) => {
-              const product = productFor(line.slug);
+              const product = productFor(line.slug, products);
               if (!product) return null;
               return (
                 <li key={line.id} className="flex gap-4 py-5">
@@ -127,7 +129,7 @@ export default function CheckoutView({shippingPolicy={threshold:999,fee:79}}:{sh
                           {line.colour} · {line.size} · {line.method}
                         </p>
                       </div>
-                      <p className="text-[14px] font-medium">{inr(lineTotal(line))}</p>
+                      <p className="text-[14px] font-medium">{inr(lineTotal(line, products))}</p>
                     </div>
                     <ul className="mt-3 flex flex-wrap gap-2">
                       {line.designs.map((design) => (

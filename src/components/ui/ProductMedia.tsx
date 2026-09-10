@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef } from "react";
-import type { GarmentKind } from "@/components/ui/Garment";
+import Garment, { type GarmentKind } from "@/components/ui/Garment";
 import type { AreaId } from "@/lib/design";
 
 const VIEW_POSITION: Record<AreaId, { left: string; top: string }> = {
@@ -87,25 +87,21 @@ const SPRITE_SOURCES: Partial<Record<GarmentKind, string>> = {
   apron: "/products/views/apron-alpha.png?v=2",
 };
 
-// New catalogue silhouettes use their approved model photography until a
-// dedicated four-angle production shoot is supplied. Their PDP/studio views
-// are intentionally limited to the truthful front image.
-const FULL_FRAME_VIEWS: Partial<Record<GarmentKind, string>> = {
-  cargo: "/products/covers/cargo-pants.png",
-  varsity: "/products/covers/varsity-jacket.png",
-  basketball: "/products/covers/basketball-jersey.png",
-  cap: "/products/covers/premium-cap.png",
-  tote: "/products/covers/tote-bag.png",
-  sling: "/products/covers/crossbody-bag.png",
-  socks: "/products/covers/crew-socks.png",
-  "medical-tunic": "/products/covers/piped-medical-tunic.png",
-  "medical-wrap-tunic": "/products/covers/side-button-medical-tunic.png",
-  "mens-short-lab-coat": "/products/covers/mens-short-lab-coat.png",
-  "womens-short-lab-coat": "/products/covers/womens-short-lab-coat.png",
-  "scrub-set": "/products/covers/maroon-scrub-set.png",
+// Catalogue covers may contain a model; editor media never may. Product-specific
+// blank assets take precedence over the shared garment-family mockups.
+const PRODUCT_EDITOR_VIEWS: Record<string, string> = {
+  "vintage-washed-tee": "/products/editor-vintage-washed-tee.png",
+  "maroon-scrub-set": "/products/editor-maroon-scrub-set.png",
 };
 
-export const hasFourViewMedia = (kind: GarmentKind) => !FULL_FRAME_VIEWS[kind];
+const FRONT_ONLY_KINDS = new Set<GarmentKind>([
+  "cargo", "varsity", "basketball", "cap", "tote", "sling", "socks",
+  "medical-tunic", "medical-wrap-tunic", "mens-short-lab-coat",
+  "womens-short-lab-coat", "scrub-set",
+]);
+
+export const hasFourViewMedia = (kind: GarmentKind, slug?: string) =>
+  !FRONT_ONLY_KINDS.has(kind) && !Boolean(slug && PRODUCT_EDITOR_VIEWS[slug]);
 
 function loadSource(src: string, priority: boolean) {
   const existing = sourceImages.get(src);
@@ -412,6 +408,7 @@ function RecolouredGarment({
 
 export function GarmentPhoto({
   kind,
+  slug,
   area = "front",
   colour = "#ffffff",
   name = "Garment",
@@ -419,6 +416,7 @@ export function GarmentPhoto({
   priority = false,
 }: {
   kind: GarmentKind;
+  slug?: string;
   area?: AreaId;
   colour?: string;
   name?: string;
@@ -427,7 +425,7 @@ export function GarmentPhoto({
 }) {
   const photo = PHOTO_VIEWS[kind]?.[area];
   const sprite = SPRITE_SOURCES[kind];
-  const fullFrame = FULL_FRAME_VIEWS[kind];
+  const productEditorView = slug && area === "front" ? PRODUCT_EDITOR_VIEWS[slug] : undefined;
   const position = VIEW_POSITION[area];
   // The supplied hoodie has real opposite-side photographs. The generated
   // tee, polo and jersey side sources were shot facing the same direction,
@@ -441,12 +439,13 @@ export function GarmentPhoto({
       role="img"
       aria-label={`${name}, ${area === "left" || area === "right" ? `${area} side` : area} view`}
     >
-      {fullFrame ? (
+      {productEditorView ? (
         <Image
-          src={fullFrame}
+          src={productEditorView}
           alt=""
           fill
           priority={priority}
+          loading={priority ? "eager" : "lazy"}
           sizes="(max-width: 1024px) 100vw, 55vw"
           className="pointer-events-none select-none object-contain object-top p-[2%]"
         />
@@ -465,15 +464,10 @@ export function GarmentPhoto({
           spritePosition={position}
         />
       ) : (
-        <Image
-          src={`/products/views/${kind}.png`}
-          alt=""
-          width={1254}
-          height={1254}
-          priority={priority}
-          sizes="(max-width: 1024px) 100vw, 55vw"
-          className="pointer-events-none absolute max-w-none select-none"
-          style={{ width: "200%", height: "200%", left: position.left, top: position.top }}
+        <Garment
+          kind={kind}
+          colour={colour}
+          className="pointer-events-none absolute inset-0 h-full w-full select-none p-[8%]"
         />
       )}
     </div>

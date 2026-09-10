@@ -126,10 +126,12 @@ function Details({ kind }: { kind: Kind }) {
 export default function Garment({
   kind,
   printArea = false,
+  colour = "#ffffff",
   className = "",
 }: {
   kind: Kind;
   printArea?: boolean;
+  colour?: string;
   className?: string;
 }) {
   return (
@@ -140,7 +142,7 @@ export default function Garment({
       aria-hidden="true"
       preserveAspectRatio="xMidYMid meet"
     >
-      <path d={BODY[kind]} fill="#ffffff" stroke="#0a0a0a" strokeWidth={1.5} />
+      <path d={BODY[kind]} fill={colour} stroke="#0a0a0a" strokeWidth={1.5} />
       <Details kind={kind} />
       {printArea && (
         <rect

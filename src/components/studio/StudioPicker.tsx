@@ -36,7 +36,7 @@ export default function StudioPicker({catalog}:{catalog:Product[]}) {
     tabParam === "upload" ? "Upload artwork" : tabParam === "text" ? "Add text" : "Generate with AI";
 
   const product = catalog.find((p) => p.slug === slug)!;
-  const productAreas = hasFourViewMedia(product.kind) ? AREAS : AREAS.slice(0, 1);
+  const productAreas = hasFourViewMedia(product.kind, product.slug) ? AREAS : AREAS.slice(0, 1);
   const current = productAreas.find((a) => a.id === area) ?? productAreas[0];
   const decorated = productAreas.filter((a) => designs[a.id]);
   const visiblePicks = showAll
@@ -164,6 +164,7 @@ export default function StudioPicker({catalog}:{catalog:Product[]}) {
           <div className="relative mt-4 aspect-[4/5] bg-alt">
             <GarmentPhoto
               kind={product.kind}
+              slug={product.slug}
               area={area}
               colour={hexFor(colour)}
               name={product.name}
@@ -215,6 +216,7 @@ export default function StudioPicker({catalog}:{catalog:Product[]}) {
             </div>
             <DesignStudio
               areaLabel={current.label}
+              method={product.methods[0]}
               onApply={(d) => setDesigns((prev) => ({ ...prev, [area]: d }))}
               saved={saved}
               onToggleSave={(k) =>

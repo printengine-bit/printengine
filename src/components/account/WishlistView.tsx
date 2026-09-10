@@ -4,12 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import Garment from "@/components/ui/Garment";
 import { Heart } from "@/components/ui/icons";
-import { hexFor, inr, products } from "@/lib/catalog";
+import { hexFor, inr, type Product } from "@/lib/catalog";
 import { useCart } from "@/lib/cart-store";
 
 const OUT_OF_STOCK: Record<string, string> = { "dry-fit-jersey": "M" };
 
-export default function WishlistView() {
+export default function WishlistView({ products }: { products: Product[] }) {
   const { hydrated, wishlist, toggleWishlist, addLine } = useCart();
   const [moved, setMoved] = useState<string[]>([]);
   const [notified, setNotified] = useState<string[]>([]);

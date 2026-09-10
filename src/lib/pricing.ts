@@ -1,4 +1,4 @@
-import { products, type Method } from "@/lib/catalog";
+import { products, type Method, type Product } from "@/lib/catalog";
 import type { AreaId, Design } from "@/lib/design";
 import { automaticPromotions, type PromotionAdjustment } from "@/lib/promotions";
 
@@ -33,22 +33,24 @@ export const COUPONS: Record<string, { off: number; label: string; minimum?: num
   PRINT250: { off: 250, label: "₹250 off orders above ₹2,000", minimum: 2000 },
 };
 
-export const productFor = (slug: string) => products.find((p) => p.slug === slug);
+export const productFor = (slug: string, catalog: Product[] = products) =>
+  catalog.find((p) => p.slug === slug);
 
 export const lineDecoration = (l: CartLine) => l.designs.length * METHOD_PRICE[l.method];
 
-export const lineTotal = (l: CartLine) => {
-  const p = productFor(l.slug);
+export const lineTotal = (l: CartLine, catalog: Product[] = products) => {
+  const p = productFor(l.slug, catalog);
   if (!p) return 0;
   return (p.price + lineDecoration(l)) * l.qty;
 };
 
 export function cartTotals(
   lines: CartLine[],
-  opts: { coupon?: string | null; express?: boolean } = {}
+  opts: { coupon?: string | null; express?: boolean } = {},
+  catalog: Product[] = products
 ) {
   const subtotal = lines.reduce((s, l) => {
-    const p = productFor(l.slug);
+    const p = productFor(l.slug, catalog);
     return s + (p ? p.price * l.qty : 0);
   }, 0);
   const decoration = lines.reduce((s, l) => s + lineDecoration(l) * l.qty, 0);

@@ -57,6 +57,32 @@ export default function ProductInfo({
   product: Product;
   related: Product[];
 }) {
+  const medical = product.category === "doctor-aprons";
+  const accessory = product.category === "accessories";
+  const embroideryOnly = product.methods.length === 1 && product.methods[0] === "Embroidery";
+  const constructionNotes = medical
+    ? [
+        "Hard-wearing poly-cotton construction for repeated professional use",
+        "Reinforced seams and practical pocket placement",
+        "Clean chest placement for a name, designation or clinic logo",
+      ]
+    : accessory
+      ? [
+          "Construction and reinforcement chosen for the way this accessory is used",
+          "Decoration placement kept clear of seams, closures and high-flex areas",
+          "Finished and inspected after printing or embroidery",
+        ]
+      : [
+        "Preshrunk and bio-washed for consistent sizing",
+        "Reinforced seams at high-stress points",
+        "A clean decoration surface selected for print or embroidery",
+      ];
+  const steps = STEPS.map((step) => step.n === "2" && embroideryOnly
+    ? { ...step, title: "Embroidery", copy: "Digitised artwork is stitched with durable colourfast thread in the approved placement." }
+    : step.n === "1" && embroideryOnly
+      ? { ...step, copy: "A person checks line weight, lettering and placement before the artwork is digitised for stitching." }
+      : step);
+
   return (
     <>
       <section className="border-t border-line">
@@ -64,20 +90,23 @@ export default function ProductInfo({
           <div>
             <Accordion title="Product details" open>
               <p>
-                Constructed from {product.subtitle.toLowerCase()}, built to hold a print without
-                fighting it.
+                {product.subtitle}. {embroideryOnly
+                  ? "Prepared with a stable surface for clean, durable embroidery."
+                  : "Selected to reproduce custom artwork cleanly and consistently."}
               </p>
               <ul className="mt-3 space-y-1.5">
-                <li>Preshrunk and bio-washed for consistent sizing</li>
-                <li>Reinforced shoulder seams and twin-needle stitching</li>
-                <li>Tear-away label so you can rebrand it as your own</li>
-                <li>Available in {product.colours.length} colours and {product.sizes.length} sizes</li>
+                {constructionNotes.map((note) => <li key={note}>{note}</li>)}
+                <li>
+                  Available in {product.colours.length} {product.colours.length === 1 ? "colour" : "colours"}
+                  {" and "}{product.sizes.length} {product.sizes.length === 1 ? "size" : "sizes"}
+                </li>
               </ul>
             </Accordion>
             <Accordion title="Fabric and care">
               <p>
-                {product.gsm} gsm. Machine wash cold, inside out, with like colours. Do not bleach.
-                Tumble dry low. Do not iron directly over the print or embroidery.
+                {product.gsm > 0 ? `${product.gsm} gsm. ` : ""}
+                Follow the care label supplied with this item. Keep decorated surfaces away from
+                direct heat and do not iron directly over print or embroidery.
               </p>
             </Accordion>
             <Accordion title="Print and embroidery guide">
@@ -99,7 +128,7 @@ export default function ProductInfo({
           <div className="bg-alt p-8">
             <h2 className="text-[20px] font-medium tracking-[-0.02em]">How your order is made</h2>
             <ol className="mt-6 space-y-6">
-              {STEPS.map((s) => (
+              {steps.map((s) => (
                 <li key={s.n} className="flex gap-4">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center border border-ink text-[12px]">
                     {s.n}

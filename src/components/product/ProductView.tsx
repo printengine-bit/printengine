@@ -82,7 +82,7 @@ export default function ProductView({ product }: { product: Product }) {
   }, [product.kind, product.sizes]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  const productAreas = hasFourViewMedia(product.kind) ? AREAS : AREAS.slice(0, 1);
+  const productAreas = hasFourViewMedia(product.kind, product.slug) ? AREAS : AREAS.slice(0, 1);
   const current = productAreas.find((a) => a.id === area) ?? productAreas[0];
   const decorated = productAreas.filter((a) => designs[a.id]);
   const decorationTotal = decorated.length * METHOD_PRICE[method];
@@ -178,6 +178,7 @@ export default function ProductView({ product }: { product: Product }) {
         <div className="relative mt-4 aspect-[4/5] bg-alt">
           <GarmentPhoto
             kind={product.kind}
+            slug={product.slug}
             area={area}
             colour={hexFor(colour)}
             name={product.name}
@@ -230,6 +231,7 @@ export default function ProductView({ product }: { product: Product }) {
               >
                 <GarmentPhoto
                   kind={product.kind}
+                  slug={product.slug}
                   area={a.id}
                   colour={hexFor(colour)}
                   name={product.name}
@@ -309,7 +311,10 @@ export default function ProductView({ product }: { product: Product }) {
             </div>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            {(["S", "M", "L", "XL", "XXL"] as const).map((s) => {
+            {(product.sizes.includes("One size")
+              ? (["One size"] as const)
+              : (["S", "M", "L", "XL", "XXL"] as const)
+            ).map((s) => {
               const available = product.sizes.includes(s);
               return (
                 <button
@@ -319,7 +324,7 @@ export default function ProductView({ product }: { product: Product }) {
                   aria-pressed={size === s}
                   onClick={() => setSize(s)}
                   className={
-                    "h-11 w-14 border text-[14px] transition-colors " +
+                    "h-11 border px-4 text-[14px] transition-colors " +
                     (!available
                       ? "cursor-not-allowed border-line bg-white text-muted/50 line-through"
                       : size === s
@@ -368,6 +373,7 @@ export default function ProductView({ product }: { product: Product }) {
         <div className="mt-7">
           <DesignStudio
             areaLabel={current.label}
+            method={method}
             onApply={apply}
             saved={saved}
             onToggleSave={(k) =>

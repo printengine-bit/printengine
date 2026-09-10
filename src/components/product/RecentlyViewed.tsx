@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import ProductCard from "@/components/ui/ProductCard";
-import { products, type Product } from "@/lib/catalog";
+import type { Product } from "@/lib/catalog";
 
 const KEY = "printengine.recentlyViewed";
 const MAX = 8;
 
-export default function RecentlyViewed({ currentSlug }: { currentSlug: string }) {
+export default function RecentlyViewed({ currentSlug, products }: { currentSlug: string; products: Product[] }) {
   const [seen, setSeen] = useState<Product[]>([]);
 
   // Browsing history lives in localStorage, readable only after mount.
@@ -34,7 +34,7 @@ export default function RecentlyViewed({ currentSlug }: { currentSlug: string })
     } catch {
       // storage unavailable — history simply will not persist
     }
-  }, [currentSlug]);
+  }, [currentSlug, products]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   if (seen.length === 0) return null;

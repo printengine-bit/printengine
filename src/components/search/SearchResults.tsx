@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import ProductCard from "@/components/ui/ProductCard";
 import { Search } from "@/components/ui/icons";
-import { categories, products } from "@/lib/catalog";
+import { categories, type Product } from "@/lib/catalog";
 import { guides } from "@/lib/content";
 
 function score(haystack: string, q: string) {
@@ -17,7 +17,7 @@ function score(haystack: string, q: string) {
     .reduce((s, t) => s + (h.includes(t) ? 1 : 0), 0);
 }
 
-export default function SearchResults() {
+export default function SearchResults({ products }: { products: Product[] }) {
   const params = useSearchParams();
   const router = useRouter();
   const q = (params.get("q") ?? "").trim();

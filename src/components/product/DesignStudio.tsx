@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import DesignRender from "@/components/product/DesignRender";
 import { Heart } from "@/components/ui/icons";
 import { FREE_GENERATIONS, STYLES, type Design, type Style } from "@/lib/design";
+import type { Method } from "@/lib/catalog";
 
 const TABS = ["Generate with AI", "Upload artwork", "Add text"] as const;
 export type Tab = (typeof TABS)[number];
@@ -20,12 +21,14 @@ export default function DesignStudio({
   saved,
   onToggleSave,
   initialTab,
+  method,
 }: {
   areaLabel: string;
   onApply: (d: Design) => void;
   saved: string[];
   onToggleSave: (key: string) => void;
   initialTab?: Tab;
+  method: Method;
 }) {
   const [tab, setTab] = useState<Tab>(initialTab ?? "Generate with AI");
 
@@ -59,7 +62,7 @@ export default function DesignStudio({
   const generate = async () => {
     const p = prompt.trim();
     if (!p) {
-      setError("Describe your print first.");
+      setError(`Describe your ${method === "Embroidery" ? "embroidery" : "print"} first.`);
       return;
     }
     if (remaining === 0) {
@@ -132,7 +135,9 @@ export default function DesignStudio({
   return (
     <div className="border border-line bg-alt p-5 lg:p-6">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-[16px] font-medium">Design your print</h2>
+        <h2 className="text-[16px] font-medium">
+          Design your {method === "Embroidery" ? "embroidery" : "print"}
+        </h2>
         <span className="text-[12px] text-muted">for {areaLabel.toLowerCase()}</span>
       </div>
 
@@ -159,7 +164,7 @@ export default function DesignStudio({
       {tab === "Generate with AI" && (
         <div className="mt-5">
           <label htmlFor="pe-prompt" className="sr-only">
-            Describe your print
+            Describe your {method === "Embroidery" ? "embroidery" : "print"}
           </label>
           <textarea
             id="pe-prompt"
@@ -169,7 +174,11 @@ export default function DesignStudio({
               setPrompt(e.target.value);
               if (error) setError(null);
             }}
-            placeholder="Describe your print — e.g. minimal line-art tiger, single colour"
+            placeholder={
+              method === "Embroidery"
+                ? "Describe your embroidery — e.g. clinic name, simple one-colour mark"
+                : "Describe your print — e.g. minimal line-art tiger, single colour"
+            }
             className="w-full resize-none border border-line bg-white px-3 py-2.5 text-[14px] focus:border-ink focus:outline-none"
           />
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { inr, products } from "@/lib/catalog";
+import { inr, type Product } from "@/lib/catalog";
 import { submitLead } from "@/lib/leads";
 
 const SEGMENTS = ["Corporate", "College or fest", "Sports team", "Clinic or hospital"];
@@ -13,7 +13,7 @@ function slab(qty: number) {
   return { off: 0, label: "Under 10" };
 }
 
-export default function BulkQuoteForm() {
+export default function BulkQuoteForm({ products }: { products: Product[] }) {
   const [slug, setSlug] = useState("classic-half-sleeve-tee");
   const [qty, setQty] = useState(50);
   const [segment, setSegment] = useState(SEGMENTS[0]);

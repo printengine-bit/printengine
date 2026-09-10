@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Garment from "@/components/ui/Garment";
 import DesignRender from "@/components/product/DesignRender";
-import { inr, products } from "@/lib/catalog";
+import { inr, type Product } from "@/lib/catalog";
 import { orderSummaries, type OrderStatus, type OrderSummary } from "@/lib/account";
 import { productFor, useCart, type CartLine } from "@/lib/cart-store";
 import { buildInvoice, downloadText } from "@/lib/invoice";
@@ -26,7 +26,7 @@ const chipClass = (s: OrderStatus) =>
       ? "border border-ink text-ink"
       : "border border-line text-muted";
 
-export default function OrdersView() {
+export default function OrdersView({ products }: { products: Product[] }) {
   const [tab, setTab] = useState<Tab>("All");
   const [placed, setPlaced] = useState<OrderSummary[]>([]);
   const [raw, setRaw] = useState<PlacedOrder[]>([]);
@@ -52,7 +52,7 @@ export default function OrdersView() {
     }
     let added = 0;
     o.thumbs.forEach((t) => {
-      const p = productFor(t.slug);
+      const p = productFor(t.slug, products);
       if (!p) return;
       addLine({
         slug: p.slug,
@@ -71,7 +71,7 @@ export default function OrdersView() {
     const stored = raw.find((r) => r.id === o.id);
     const lines = stored
       ? stored.lines.map((l) => {
-          const p = productFor(l.slug);
+          const p = productFor(l.slug, products);
           return {
             name: p?.name ?? l.slug,
             detail: `${l.colour} / ${l.size} / ${l.method}`,
@@ -80,7 +80,7 @@ export default function OrdersView() {
           };
         })
       : o.thumbs.map((t) => {
-          const p = productFor(t.slug);
+          const p = productFor(t.slug, products);
           return {
             name: p?.name ?? t.slug,
             detail: "As ordered",
@@ -171,7 +171,8 @@ export default function OrdersView() {
               <div className="px-5 py-5">
                 <ul className="flex flex-wrap gap-3">
                   {o.thumbs.map((t, i) => {
-                    const p = products.find((x) => x.slug === t.slug)!;
+                    const p = products.find((x) => x.slug === t.slug);
+                    if (!p) return null;
                     return (
                       <li key={i} className="relative h-[72px] w-[72px] bg-alt">
                         <Garment kind={p.kind} className="h-full w-full p-2" />

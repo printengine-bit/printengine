@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import LandingShell from "@/components/layout/LandingShell";
 import BulkQuoteForm from "@/components/bulk/BulkQuoteForm";
+import { commerceProducts } from "@/lib/commerce-catalog";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Bulk orders",
@@ -8,7 +11,8 @@ export const metadata: Metadata = {
     "Slab pricing from 10 pieces for teams, colleges, clinics and companies. GST invoicing and a dedicated manager.",
 };
 
-export default function Page() {
+export default async function Page() {
+  const products = await commerceProducts();
   return (
     <LandingShell
       eyebrow="From 10 pieces"
@@ -23,7 +27,7 @@ export default function Page() {
         { heading: "GST invoicing", body: "Add your GSTIN and we raise the invoice against your business for input credit." },
       ]}
     >
-      <BulkQuoteForm />
+      <BulkQuoteForm products={products} />
     </LandingShell>
   );
 }

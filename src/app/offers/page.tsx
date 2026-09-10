@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import LandingShell from "@/components/layout/LandingShell";
-import { products } from "@/lib/catalog";
+import { commerceProducts } from "@/lib/commerce-catalog";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Offers",
   description: "Current discounts, coupon codes and combo pricing on custom printed clothing.",
 };
 
-export default function Page() {
+export default async function Page() {
+  const products = await commerceProducts();
   const discounted = [...products]
     .sort((a, b) => (b.mrp - b.price) / b.mrp - (a.mrp - a.price) / a.mrp)
     .slice(0, 4);

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import LandingShell from "@/components/layout/LandingShell";
-import { products } from "@/lib/catalog";
+import { commerceProducts } from "@/lib/commerce-catalog";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Embroidery",
@@ -8,7 +10,8 @@ export const metadata: Metadata = {
     "Stitched names, initials and logos on polos, hoodies and doctor aprons. From ₹249 per area.",
 };
 
-export default function Page() {
+export default async function Page() {
+  const products = await commerceProducts();
   const embroiderable = products.filter((p) => p.methods.includes("Embroidery")).slice(0, 4);
   return (
     <LandingShell

@@ -1,10 +1,12 @@
 import type { MetadataRoute } from "next";
-import { categories, products } from "@/lib/catalog";
+import { categories } from "@/lib/catalog";
+import { commerceProducts } from "@/lib/commerce-catalog";
 import { guides, policies } from "@/lib/content";
 
 const BASE = "https://www.printengine.in";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const products = await commerceProducts();
   const staticPages = [
     { path: "", priority: 1 },
     { path: "/shop", priority: 0.9 },
