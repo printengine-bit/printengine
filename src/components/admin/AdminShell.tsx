@@ -10,10 +10,12 @@ const nav = [
   ["Inventory", "/admin/inventory"],
   ["Orders", "/admin/orders"],
   ["Customers", "/admin/customers"],
+  ["Reports", "/admin/reports"],
   ["Discounts", "/admin/discounts"],
   ["Artwork", "/admin/artwork"],
   ["Content", "/admin/content"],
   ["Settings", "/admin/settings"],
+  ["Staff access", "/admin/staff"],
   ["Audit log", "/admin/audit"],
 ] as const;
 

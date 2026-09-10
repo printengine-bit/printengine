@@ -33,6 +33,8 @@ export default function ProductCard({
           <ProductCover
             slug={product.slug}
             name={product.name}
+            coverUrl={product.coverUrl}
+            altText={product.coverAlt}
             eager={eagerImage}
             kidsCover={kidsCover}
             className="transition-transform duration-500 group-hover:scale-[1.025]"

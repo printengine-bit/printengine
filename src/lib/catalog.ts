@@ -47,6 +47,8 @@ export type Product = {
   sizes: Size[];
   methods: Method[];
   stock?: number;
+  coverUrl?: string;
+  coverAlt?: string;
   bestseller?: boolean;
   isNew?: boolean;
 };

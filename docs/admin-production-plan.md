@@ -6,34 +6,38 @@ The admin has authenticated routes and working database mutations for products, 
 
 ## Delivery sequence
 
-### 1. Catalogue and inventory foundation — in progress
+### 1. Catalogue and inventory foundation — substantially complete
 
-- Full product editor for identity, copy, merchandising, audience, decoration methods and publishing state.
-- Variant editor for SKU, colour, size, optional override price, stock threshold and availability.
-- Reserved and sellable stock visibility, searchable inventory and movement history.
-- Product media management, image ordering and validation against storefront rendering.
+- [x] Full product editor for identity, copy, merchandising, audience, decoration methods and publishing state.
+- [x] Variant editor for SKU, colour, size, optional override price, stock threshold and availability.
+- [x] Reserved and sellable stock visibility, searchable inventory and movement history.
+- [x] Storefront cover upload wired through Cloudinary and database catalogue rendering.
+- [ ] Multi-angle media ordering and studio-view validation.
 - Bulk CSV import/export, stock counts and safe product archiving.
 
-### 2. Order operations and fulfilment
+### 2. Order operations and fulfilment — core workflows complete
 
-- Searchable, paginated queues for unpaid, production-ready, shipment-failed, shipped and return orders.
-- Order detail actions with state-machine enforcement and complete order-event history.
-- Customer notes, internal notes, tags, packing slips, invoices and print-ready artwork downloads.
-- Razorpay capture/refund reconciliation and cancellation/restock workflows.
+- [x] Searchable, paginated queues for unpaid, production-ready, shipment-failed, shipped and return orders.
+- [x] Order detail actions with state-machine enforcement and complete order-event history.
+- [x] Internal notes and production specifications.
+- [x] Idempotent Razorpay refund ledger, unpaid cancellation and explicit returned-stock recovery.
+- [ ] Tags, packing slips, invoices and consolidated print-ready artwork bundles.
 - Shiprocket booking, labels, pickup, tracking sync, NDR and return handling with retry queues.
 
-### 3. Customers, promotions and merchandising
+### 3. Customers, promotions and merchandising — core workflows complete
 
-- Customer detail with addresses, order history, lifetime value and support notes.
-- Discount editing, scheduling, limits, product/category scope and redemption history.
+- [x] Customer detail with addresses, order history, lifetime value and support notes.
+- [x] Discount editing, scheduling and usage limits.
+- [ ] Product/category discount scope and redemption-level history.
 - Homepage/navigation/content management with draft, preview and publishing controls.
 - Artwork review notes, versioning, assignment and production-ready approval locks.
 
-### 4. Access, reporting and reliability
+### 4. Access, reporting and reliability — in progress
 
-- Staff roles and granular permissions with session revocation and optional MFA.
-- Sales, product, inventory, tax, discount and fulfilment reports with CSV exports.
-- Audit filters, before/after values and retention policy.
+- [x] Staff/admin access management with self-lockout and last-admin protection.
+- [x] Sales and product reporting with orders CSV export.
+- [x] Searchable audit details.
+- [ ] Granular permission policies, session revocation and optional MFA.
 - Database backups, alerting, job retries, integration health, error monitoring and restore drills.
 - End-to-end tests for catalogue-to-checkout-to-refund and fulfilment exceptions.
 

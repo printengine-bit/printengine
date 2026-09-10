@@ -315,6 +315,8 @@ export function ProductCover({
   sizes = "(max-width: 640px) 50vw, (max-width: 1200px) 33vw, 25vw",
   eager = false,
   kidsCover = false,
+  coverUrl,
+  altText,
 }: {
   slug: string;
   name: string;
@@ -322,6 +324,8 @@ export function ProductCover({
   sizes?: string;
   eager?: boolean;
   kidsCover?: boolean;
+  coverUrl?: string;
+  altText?: string;
 }) {
   const showChildModel =
     KIDS_COVER_SLUGS.has(slug) && (kidsCover || slug === "kids-half-sleeve-tee");
@@ -333,12 +337,12 @@ export function ProductCover({
 
   return (
     <Image
-      src={`/products/${coverFolder}/${slug}.png`}
-      alt={`${name} worn by a ${showChildModel ? "child" : "printengine studio"} model`}
+      src={coverUrl||`/products/${coverFolder}/${slug}.png`}
+      alt={altText||`${name} worn by a ${showChildModel ? "child" : "printengine studio"} model`}
       fill
       sizes={sizes}
       loading={eager ? "eager" : "lazy"}
-      unoptimized={slug === "premium-polo"}
+      unoptimized={Boolean(coverUrl)||slug === "premium-polo"}
       className={`object-cover object-top ${className}`}
     />
   );

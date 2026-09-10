@@ -5,7 +5,7 @@ export async function runAdminAction(kind:keyof typeof adminSchemas,form:FormDat
   try {
     const user=await requireAdmin();
     if(!user)return {ok:false,message:"Your session expired. Sign in as an administrator to continue."};
-    if(user.role!=="admin"&&["createProduct","createVariant","updateProduct","updateProductDetails","updateVariant","createDiscount","toggleDiscount","saveKeyValue"].includes(kind))return {ok:false,message:"Only administrators can change catalogue, discounts or store settings."};
+    if(user.role!=="admin"&&["createProduct","createVariant","updateProduct","updateProductDetails","updateVariant","createDiscount","toggleDiscount","updateDiscount","saveKeyValue","refundOrder","cancelOrder","restockOrder","updateUserAccess"].includes(kind))return {ok:false,message:"Only administrators can change catalogue, finance, access, discounts or store settings."};
     const result=adminSchemas[kind].safeParse(Object.fromEntries(form));
     if(!result.success)return {ok:false,message:result.error.issues.map(x=>x.message).join(" ")};
     await operation();

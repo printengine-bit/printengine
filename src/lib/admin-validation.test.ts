@@ -29,6 +29,17 @@ describe("admin input boundaries",()=>{
     expect(adminSchemas.updateVariant.safeParse({...variant,price:"12.5"}).success).toBe(false);
     expect(adminSchemas.updateVariant.safeParse({...variant,colourHex:"black"}).success).toBe(false);
   });
+  it("requires explicit confirmation for financial and stock operations",()=>{
+    expect(adminSchemas.refundOrder.safeParse({id,amount:"500",reason:"Customer request",confirmation:"REFUND"}).success).toBe(true);
+    expect(adminSchemas.refundOrder.safeParse({id,amount:"500",reason:"Customer request",confirmation:"refund"}).success).toBe(false);
+    expect(adminSchemas.cancelOrder.safeParse({id,confirmation:"CANCEL"}).success).toBe(true);
+    expect(adminSchemas.restockOrder.safeParse({id,confirmation:"RESTOCK"}).success).toBe(true);
+  });
+  it("rejects discount schedules that end before they begin",()=>{
+    const discount={id,name:"Launch",code:"LAUNCH",type:"percentage",value:"10",minimumQuantity:"1",minimumSubtotal:"0",buyQuantity:"",getQuantity:"",usageLimit:"100",startsAt:"2026-09-10T10:00",endsAt:"2026-09-09T10:00",active:"on"};
+    expect(adminSchemas.updateDiscount.safeParse(discount).success).toBe(false);
+    expect(adminSchemas.updateDiscount.safeParse({...discount,endsAt:"2026-09-11T10:00"}).success).toBe(true);
+  });
 });
 describe("order progression",()=>{
   it("requires paid confirmation",()=>expect(orderUpdateError({status:"pending",payment_status:"pending"},"confirmed","processing","")).toMatch(/Payment/));

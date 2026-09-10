@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import AdminForm from "@/components/admin/AdminForm";
 import AdminShell from "@/components/admin/AdminShell";
+import ProductMediaManager from "@/components/admin/ProductMediaManager";
 import { createVariant, updateProductDetails, updateVariant } from "@/app/admin/actions";
 import { adminPageUser, money, shortDate } from "@/lib/admin";
 import { db } from "@/lib/db";
@@ -11,7 +12,7 @@ const categories=["t-shirts","hoodies","sweatshirts","jerseys","streetwear","spo
 const kinds=["tee-half","tee-full","polo","oversized","hoodie","sweatshirt","jersey","henley","apron","cargo","varsity","basketball","cap","tote","sling","socks","medical-tunic","medical-wrap-tunic","mens-short-lab-coat","womens-short-lab-coat","scrub-set"];
 const field="mt-1 h-10 w-full border border-line bg-white px-3 text-ink";
 
-type ProductRow={id:string;name:string;slug:string;subtitle:string;description:string;category:string;kind:string;fit:string;gsm:number;base_price:number;compare_at_price:number;audience:unknown;methods:unknown;status:string;featured:boolean;is_new:boolean;created_at:Date;updated_at:Date};
+type ProductRow={id:string;name:string;slug:string;subtitle:string;description:string;category:string;kind:string;fit:string;gsm:number;base_price:number;compare_at_price:number;audience:unknown;methods:unknown;media:unknown;status:string;featured:boolean;is_new:boolean;created_at:Date;updated_at:Date};
 type VariantRow={id:string;sku:string;colour:string;colour_hex:string;size:string;price:number|null;stock:number;reserved_stock:number;low_stock_at:number;active:boolean};
 type Movement={id:string;sku:string;quantity:number;reason:string;reference:string|null;actor:string|null;created_at:Date};
 
@@ -24,7 +25,7 @@ export default async function Page({params}:{params:Promise<{id:string}>}){
     db()<VariantRow[]>`SELECT id,sku,colour,colour_hex,size,price,stock,reserved_stock,low_stock_at,active FROM product_variants WHERE product_id=${id} ORDER BY active DESC,colour,size`,
     db()<Movement[]>`SELECT m.id,v.sku,m.quantity,m.reason,m.reference,u.email actor,m.created_at FROM inventory_movements m JOIN product_variants v ON v.id=m.variant_id LEFT JOIN users u ON u.id=m.actor_id WHERE v.product_id=${id} ORDER BY m.created_at DESC LIMIT 30`,
   ]);
-  const product=products[0];if(!product)notFound();const audience=stringList(product.audience);const methods=stringList(product.methods);
+  const product=products[0];if(!product)notFound();const audience=stringList(product.audience);const methods=stringList(product.methods);const media=product.media&&typeof product.media==="object"?product.media as {cover?:{url?:unknown}}:{};const coverUrl=typeof media.cover?.url==="string"?media.cover.url:undefined;
   const total=variants.reduce((sum,item)=>sum+item.stock,0);const reserved=variants.reduce((sum,item)=>sum+item.reserved_stock,0);
   return <AdminShell title={product.name} active="/admin/products">
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><Link href="/admin/products" className="text-[13px] underline underline-offset-4">Back to products</Link><Link href={`/product/${product.slug}`} className="border border-ink px-4 py-2 text-[12px]">View storefront product</Link></div>
@@ -48,6 +49,7 @@ export default async function Page({params}:{params:Promise<{id:string}>}){
       <div className="flex flex-wrap items-end gap-5 pb-2"><label className="flex items-center gap-2 text-[13px]"><input type="checkbox" name="featured" defaultChecked={product.featured}/>Featured</label><label className="flex items-center gap-2 text-[13px]"><input type="checkbox" name="isNew" defaultChecked={product.is_new}/>New badge</label></div>
       <div className="lg:col-span-2"><button className="h-11 bg-ink px-6 text-white">Save product record</button></div>
     </AdminForm>
+    <div className="mt-6"><ProductMediaManager productId={product.id} currentUrl={coverUrl}/></div>
 
     <section className="mt-6"><div className="flex flex-wrap items-end justify-between gap-3"><div><h2 className="text-xl font-medium">Variants</h2><p className="mt-1 text-[13px] text-muted">Stock cannot be set below active checkout reservations. Disable variants instead of deleting history.</p></div><span className="text-[13px] text-muted">{money(product.base_price)} base price</span></div>
       <details className="mt-4 border border-line bg-white p-5"><summary className="cursor-pointer font-medium">Add colour / size variant</summary><AdminForm action={createVariant} className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5 lg:items-end"><input type="hidden" name="productId" value={product.id}/><label className="text-[11px] text-muted">Colour<input required name="colour" className={field}/></label><label className="text-[11px] text-muted">Hex<input required name="colourHex" defaultValue="#0a0a0a" className={field}/></label><label className="text-[11px] text-muted">Size<input required name="size" defaultValue="M" className={field}/></label><label className="text-[11px] text-muted">Opening stock<input required name="stock" type="number" min="0" defaultValue="0" className={field}/></label><button className="h-10 bg-lime px-4">Add variant</button></AdminForm></details>

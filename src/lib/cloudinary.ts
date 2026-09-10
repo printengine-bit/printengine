@@ -36,6 +36,8 @@ export async function uploadArtwork(file: string, filename?: string) {
   };
 }
 
+export async function uploadProductImage(file:string,filename?:string){configure();const result=await cloudinary.uploader.upload(file,{folder:"printengine/products",type:"upload",resource_type:"image",use_filename:Boolean(filename),filename_override:filename,unique_filename:true,overwrite:false});return {url:result.secure_url,publicId:result.public_id,format:result.format,width:result.width,height:result.height};}
+
 export function signedArtworkUrl(publicId: string, format?: string) {
   configure();
   return cloudinary.url(publicId, {

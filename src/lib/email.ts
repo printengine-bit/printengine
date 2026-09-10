@@ -72,3 +72,5 @@ export async function sendShipmentUpdate(email: string, orderNumber: string, sta
     { idempotencyKey: `shipment-${orderNumber}-${status.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 80)}`, tag: "shipment_update" },
   );
 }
+
+export async function sendRefundUpdate(email:string,orderNumber:string,amount:number,refundId:string){return sendEmail(email,`${orderNumber}: refund processed`,`<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#111"><p style="color:#709900;text-transform:uppercase;letter-spacing:.12em;font-size:12px">PrintEngine payments</p><h1>Refund processed</h1><p>We processed a refund of <strong>₹${amount.toLocaleString("en-IN")}</strong> for order <strong>${escapeHtml(orderNumber)}</strong>.</p><p>Refund reference: ${escapeHtml(refundId)}. Your bank may take several working days to display the credit.</p></div>`,{idempotencyKey:`refund-processed-${refundId}`,tag:"refund_update"});}

@@ -79,6 +79,8 @@ export default function StudioPicker({catalog}:{catalog:Product[]}) {
                     <ProductCover
                       slug={p.slug}
                       name={p.name}
+                      coverUrl={p.coverUrl}
+                      altText={p.coverAlt}
                       sizes="(max-width: 640px) 50vw, (max-width: 1280px) 25vw, 16vw"
                       className="transition-transform duration-300 group-hover:scale-[1.02]"
                       eager={!showAll}

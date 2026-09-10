@@ -21,6 +21,11 @@ export const adminSchemas = {
   updateInventory: z.object({id,stock:integer}),
   updateOrder: z.object({id,status:z.enum(["pending","confirmed","in_production","shipped","delivered"]),fulfillment:z.enum(["unfulfilled","processing","fulfilled","returned"]),tracking:z.string().trim().max(120)}),
   saveOrderNote:z.object({id,note:z.string().trim().max(2000)}),
+  refundOrder:z.object({id,amount:z.string().regex(/^\d+$/,"Use a whole rupee amount.").transform(Number).pipe(z.number().int().positive()),reason:z.string().trim().min(3).max(500),confirmation:z.literal("REFUND",{error:"Type REFUND to confirm."})}),
+  cancelOrder:z.object({id,confirmation:z.literal("CANCEL",{error:"Type CANCEL to confirm."})}),
+  restockOrder:z.object({id,confirmation:z.literal("RESTOCK",{error:"Type RESTOCK to confirm."})}),
+  addCustomerNote:z.object({id,note:z.string().trim().min(2).max(2000)}),
+  updateUserAccess:z.object({id,role:z.enum(["customer","staff","admin"]),active:z.string().optional()}),
   bookShipment: z.object({id}),
   createDiscount: z.object({name:text,code:z.string().regex(/^[a-z0-9_-]*$/i).max(50),type:z.enum(["percentage","fixed","free_shipping","buy_x_get_y"]),value:integer,minimumQuantity:integer,minimumSubtotal:integer,buyQuantity:integer.optional(),getQuantity:integer.optional()}).superRefine((v,ctx)=>{
     if(v.type==="percentage" && (v.value<1||v.value>100))ctx.addIssue({code:"custom",message:"Percentage discounts must be between 1 and 100."});
@@ -28,7 +33,8 @@ export const adminSchemas = {
     if(v.type==="buy_x_get_y" && (!v.buyQuantity||!v.getQuantity))ctx.addIssue({code:"custom",message:"Specify positive Buy and Get quantities."});
   }),
   toggleDiscount:z.object({id}),
-  reviewArtwork:z.object({id,status:z.enum(["pending","approved","changes_requested","rejected"])}),
+  updateDiscount:z.object({id,name:text,code:z.string().regex(/^[a-z0-9_-]*$/i).max(50),type:z.enum(["percentage","fixed","free_shipping","buy_x_get_y"]),value:integer,minimumQuantity:integer,minimumSubtotal:integer,buyQuantity:z.string().regex(/^$|^\d+$/),getQuantity:z.string().regex(/^$|^\d+$/),usageLimit:z.string().regex(/^$|^\d+$/),startsAt:z.string().max(30),endsAt:z.string().max(30),combinable:z.string().optional(),active:z.string().optional()}).superRefine((v,ctx)=>{if(v.type==="percentage"&&(v.value<1||v.value>100))ctx.addIssue({code:"custom",message:"Percentage discounts must be between 1 and 100."});if(v.type==="buy_x_get_y"&&(!Number(v.buyQuantity)||!Number(v.getQuantity)))ctx.addIssue({code:"custom",message:"Specify positive Buy and Get quantities."});if(v.startsAt&&v.endsAt&&new Date(v.endsAt)<=new Date(v.startsAt))ctx.addIssue({code:"custom",message:"End time must be after start time."});}),
+  reviewArtwork:z.object({id,status:z.enum(["pending","approved","changes_requested","rejected"]),notes:z.string().max(2000).optional(),assignedTo:z.union([id,z.literal("")]).optional()}),
   saveKeyValue:z.object({table:z.enum(["content","settings"]),key:text,value:z.string().max(5000)}).superRefine((v,ctx)=>{
     const allowed=v.table==="content"?["announcement","hero_title","hero_body","support_message"]:["store_name","support_email","support_phone","gstin","free_shipping_threshold","standard_shipping_fee","order_prefix"];
     if(!allowed.includes(v.key))ctx.addIssue({code:"custom",message:"Unknown setting."});

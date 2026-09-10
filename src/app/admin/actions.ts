@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { bookOrderShipment } from "@/lib/shiprocket";
+import { createOrderRefund } from "@/lib/razorpay-refunds";
 
 async function actor() {
   const user = await requireAdmin();
@@ -125,6 +126,35 @@ export async function saveOrderNote(form:FormData){
   });
 }
 
+export async function refundOrder(form:FormData){
+  return runAdminAction("refundOrder",form,async()=>{
+    const user=await actor();const id=String(form.get("id"));const amount=Number(form.get("amount"));const reason=String(form.get("reason")).trim();
+    await createOrderRefund(id,amount,reason,user.id);await audit(user.id,"refund.requested","order",id,{amount,reason});revalidatePath(`/admin/orders/${id}`);revalidatePath("/admin/orders");
+  });
+}
+
+export async function cancelOrder(form:FormData){
+  return runAdminAction("cancelOrder",form,async()=>{
+    const user=await actor();const id=String(form.get("id"));
+    await db().begin(async sql=>{const rows=await sql<Array<{number:string;status:string;payment_status:string;reservation_released:boolean}>>`SELECT number,status,payment_status,reservation_released FROM orders WHERE id=${id} FOR UPDATE`;const order=rows[0];if(!order)throw new AdminInputError("Order not found.");if(!["pending","failed"].includes(order.payment_status))throw new AdminInputError("Paid orders must be refunded, not cancelled directly.");if(["cancelled","refunded"].includes(order.status))throw new AdminInputError("This order is already closed.");if(!order.reservation_released)await sql`UPDATE product_variants v SET reserved_stock=greatest(0,v.reserved_stock-i.quantity),updated_at=now() FROM (SELECT variant_id,sum(quantity)::int quantity FROM order_items WHERE order_id=${id} AND variant_id IS NOT NULL GROUP BY variant_id) i WHERE i.variant_id=v.id`;await sql`UPDATE orders SET status='cancelled',reservation_released=true,updated_at=now() WHERE id=${id}`;await sql`INSERT INTO order_events(order_id,event,details) VALUES (${id},'order_cancelled',${sql.json({actorId:user.id})}) ON CONFLICT(order_id,event) DO NOTHING`;await sql`INSERT INTO audit_logs(actor_id,action,entity_type,entity_id) VALUES (${user.id},'order.cancelled','order',${id})`;});revalidatePath(`/admin/orders/${id}`);revalidatePath("/admin/orders");revalidatePath("/admin/inventory");
+  });
+}
+
+export async function restockOrder(form:FormData){
+  return runAdminAction("restockOrder",form,async()=>{
+    const user=await actor();const id=String(form.get("id"));
+    await db().begin(async sql=>{const rows=await sql<Array<{number:string;payment_status:string;restocked_at:Date|null}>>`SELECT number,payment_status,restocked_at FROM orders WHERE id=${id} FOR UPDATE`;const order=rows[0];if(!order)throw new AdminInputError("Order not found.");if(order.payment_status!=="refunded")throw new AdminInputError("Only fully refunded orders can be restocked here.");if(order.restocked_at)throw new AdminInputError("This order was already restocked.");await sql`UPDATE product_variants v SET stock=v.stock+i.quantity,updated_at=now() FROM (SELECT variant_id,sum(quantity)::int quantity FROM order_items WHERE order_id=${id} AND variant_id IS NOT NULL GROUP BY variant_id) i WHERE i.variant_id=v.id`;await sql`INSERT INTO inventory_movements(variant_id,quantity,reason,reference,actor_id) SELECT variant_id,sum(quantity)::int,'refunded order restock',${order.number},${user.id} FROM order_items WHERE order_id=${id} AND variant_id IS NOT NULL GROUP BY variant_id`;await sql`UPDATE orders SET restocked_at=now(),updated_at=now() WHERE id=${id}`;await sql`INSERT INTO order_events(order_id,event,details) VALUES (${id},'inventory_restocked',${sql.json({actorId:user.id})}) ON CONFLICT(order_id,event) DO NOTHING`;await sql`INSERT INTO audit_logs(actor_id,action,entity_type,entity_id) VALUES (${user.id},'order.restocked','order',${id})`;});revalidatePath(`/admin/orders/${id}`);revalidatePath("/admin/inventory");
+  });
+}
+
+export async function addCustomerNote(form:FormData){
+  return runAdminAction("addCustomerNote",form,async()=>{const user=await actor();const id=String(form.get("id"));const note=String(form.get("note")).trim();const exists=await db()<Array<{id:string}>>`SELECT id FROM users WHERE id=${id} AND role='customer'`;if(!exists[0])throw new AdminInputError("Customer not found.");await db()`INSERT INTO customer_notes(customer_id,note,actor_id) VALUES (${id},${note},${user.id})`;await audit(user.id,"customer.note_added","customer",id);revalidatePath(`/admin/customers/${id}`);});
+}
+
+export async function updateUserAccess(form:FormData){
+  return runAdminAction("updateUserAccess",form,async()=>{const user=await actor();const id=String(form.get("id"));const role=String(form.get("role"));const active=form.get("active")==="on";if(id===user.id&&(!active||role!=="admin"))throw new AdminInputError("You cannot remove your own administrator access.");await db().begin(async sql=>{const rows=await sql<Array<{role:string}>>`SELECT role FROM users WHERE id=${id} FOR UPDATE`;if(!rows[0])throw new AdminInputError("User not found.");if(rows[0].role==="admin"&&role!=="admin"){const count=await sql<Array<{count:number}>>`SELECT count(*)::int count FROM users WHERE role='admin' AND active=true`;if((count[0]?.count??0)<=1)throw new AdminInputError("At least one active administrator is required.");}await sql`UPDATE users SET role=${role},active=${active},updated_at=now() WHERE id=${id}`;await sql`INSERT INTO audit_logs(actor_id,action,entity_type,entity_id,details) VALUES (${user.id},'user.access_updated','user',${id},${sql.json({previousRole:rows[0].role,role,active})})`;});revalidatePath("/admin/staff");revalidatePath(`/admin/customers/${id}`);});
+}
+
 export async function bookShipment(form: FormData) {
   return runAdminAction("bookShipment", form, async () => {
   const user = await actor();
@@ -160,13 +190,17 @@ export async function toggleDiscount(form: FormData) {
   });
 }
 
+export async function updateDiscount(form:FormData){
+  return runAdminAction("updateDiscount",form,async()=>{const user=await actor();const id=String(form.get("id"));const type=String(form.get("type"));const code=String(form.get("code")||"").trim().toUpperCase()||null;const starts=String(form.get("startsAt")||"");const ends=String(form.get("endsAt")||"");const rows=await db()<Array<{id:string}>>`UPDATE discounts SET name=${String(form.get("name")).trim()},code=${code},type=${type},value=${Number(form.get("value"))},minimum_quantity=${Number(form.get("minimumQuantity"))},minimum_subtotal=${Number(form.get("minimumSubtotal"))},buy_quantity=${type==='buy_x_get_y'?Number(form.get("buyQuantity")):null},get_quantity=${type==='buy_x_get_y'?Number(form.get("getQuantity")):null},usage_limit=${String(form.get("usageLimit")||"")===""?null:Number(form.get("usageLimit"))},starts_at=${starts===""?null:new Date(starts)},ends_at=${ends===""?null:new Date(ends)},combinable=${form.get("combinable")==="on"},active=${form.get("active")==="on"},updated_at=now() WHERE id=${id} RETURNING id`;if(!rows[0])throw new AdminInputError("Discount not found.");await audit(user.id,"discount.updated","discount",id);revalidatePath("/admin/discounts");revalidatePath("/checkout");});
+}
+
 export async function reviewArtwork(form: FormData) {
   return runAdminAction("reviewArtwork", form, async () => {
   const user = await actor();
   const id = String(form.get("id"));
-  const status = String(form.get("status"));
-  await db()`UPDATE artworks SET status=${status}, reviewed_by=${user.id}, reviewed_at=now() WHERE id=${id}`;
-  await audit(user.id, "artwork.reviewed", "artwork", id);
+  const status = String(form.get("status"));const notes=String(form.get("notes")||"").trim();const assigned=String(form.get("assignedTo")||"")||null;
+  await db()`UPDATE artworks SET status=${status},review_notes=${notes||null},assigned_to=${assigned},reviewed_by=${user.id},reviewed_at=now() WHERE id=${id}`;
+  await audit(user.id, "artwork.reviewed", "artwork", id,{status,assignedTo:assigned,hasNotes:Boolean(notes)});
   revalidatePath("/admin/artwork");
   });
 }
