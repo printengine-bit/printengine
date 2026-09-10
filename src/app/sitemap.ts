@@ -1,12 +1,15 @@
 import type { MetadataRoute } from "next";
-import { categories } from "@/lib/catalog";
+import { categories, products as fallbackProducts } from "@/lib/catalog";
 import { commerceProducts } from "@/lib/commerce-catalog";
 import { guides, policies } from "@/lib/content";
 
 const BASE = "https://www.printengine.in";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const products = await commerceProducts();
+  // Railway builds run before the private database network is available. Keep
+  // sitemap generation deploy-safe while still using the live catalogue when
+  // the database can be reached (for example during runtime regeneration).
+  const products = await commerceProducts().catch(() => fallbackProducts);
   const staticPages = [
     { path: "", priority: 1 },
     { path: "/shop", priority: 0.9 },
