@@ -3,7 +3,7 @@ import { categories, products as fallbackProducts } from "@/lib/catalog";
 import { commerceProducts } from "@/lib/commerce-catalog";
 import { guides, policies } from "@/lib/content";
 
-const BASE = "https://www.printengine.in";
+const BASE = "https://printengine.in";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Railway builds run before the private database network is available. Keep
