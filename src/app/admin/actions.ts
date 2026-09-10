@@ -1,12 +1,13 @@
 "use server";
 
 import { runAdminAction } from "@/lib/admin-mutation";
-import { AdminInputError, orderUpdateError } from "@/lib/admin-validation";
+import { AdminInputError, orderUpdateError, type AdminActionResult } from "@/lib/admin-validation";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { bookOrderShipment } from "@/lib/shiprocket";
 import { createOrderRefund } from "@/lib/razorpay-refunds";
+import { clearDemoData, loadDemoData } from "@/lib/demo-data";
 
 async function actor() {
   const user = await requireAdmin();
@@ -16,6 +17,29 @@ async function actor() {
 
 async function audit(actorId: string, action: string, entityType: string, entityId?: string, details:Record<string,unknown>={}) {
   await db()`INSERT INTO audit_logs (actor_id, action, entity_type, entity_id, details) VALUES (${actorId}, ${action}, ${entityType}, ${entityId ?? null}, ${db().json(details as never)})`;
+}
+
+export async function seedDemoPreview():Promise<AdminActionResult>{
+  try{
+    const user=await actor();
+    if(user.role!=="admin")return {ok:false,message:"Only administrators can load demo data."};
+    const counts=await loadDemoData(user.id);
+    await audit(user.id,"demo.loaded","store",undefined,counts);
+    revalidatePath("/admin");revalidatePath("/admin/orders");revalidatePath("/admin/customers");revalidatePath("/admin/reports");revalidatePath("/admin/artwork");revalidatePath("/admin/discounts");revalidatePath("/admin/inventory");
+    return {ok:true,message:`Loaded ${counts.customers} demo customers, ${counts.orders} demo orders and ${counts.artworks} artwork jobs.`};
+  }catch(error){console.error("Demo data load failed",error);return {ok:false,message:"Demo data could not be loaded. Check the deployment logs before retrying."};}
+}
+
+export async function removeDemoPreview(form:FormData):Promise<AdminActionResult>{
+  try{
+    const user=await actor();
+    if(user.role!=="admin")return {ok:false,message:"Only administrators can remove demo data."};
+    if(String(form.get("confirmation")||"")!=="REMOVE DEMO")return {ok:false,message:"Type REMOVE DEMO exactly to confirm."};
+    await clearDemoData();
+    await audit(user.id,"demo.removed","store");
+    revalidatePath("/admin");revalidatePath("/admin/orders");revalidatePath("/admin/customers");revalidatePath("/admin/reports");revalidatePath("/admin/artwork");revalidatePath("/admin/discounts");revalidatePath("/admin/inventory");
+    return {ok:true,message:"All tagged demo preview data was removed."};
+  }catch(error){console.error("Demo data removal failed",error);return {ok:false,message:"Demo data could not be removed. Check the deployment logs before retrying."};}
 }
 
 export async function createProduct(form:FormData){
@@ -159,6 +183,9 @@ export async function bookShipment(form: FormData) {
   return runAdminAction("bookShipment", form, async () => {
   const user = await actor();
   const id = String(form.get("id"));
+  const order=await db()<Array<{number:string}>>`SELECT number FROM orders WHERE id=${id}`;
+  if(!order[0])throw new AdminInputError("Order not found.");
+  if(order[0].number.startsWith("DEMO-"))throw new AdminInputError("Demo preview orders cannot trigger real shipments.");
   const result = await bookOrderShipment(id);
   await audit(user.id, "shipment.booked", "order", id);
   revalidatePath("/admin/orders");

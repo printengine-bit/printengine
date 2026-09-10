@@ -9,7 +9,7 @@ function credentials(){const key=process.env.RAZORPAY_KEY_ID;const secret=proces
 export async function createOrderRefund(orderId:string,amount:number,reason:string,actorId:string){
   const request=await db().begin(async sql=>{
     const orders=await sql<Array<{id:string;number:string;email:string;grand_total:number;payment_status:string;razorpay_payment_id:string|null}>>`SELECT id,number,email,grand_total,payment_status,razorpay_payment_id FROM orders WHERE id=${orderId} FOR UPDATE`;
-    const order=orders[0];if(!order)throw new Error("Order not found.");if(!["paid","partially_refunded"].includes(order.payment_status)||!order.razorpay_payment_id)throw new Error("Only captured Razorpay payments can be refunded.");
+    const order=orders[0];if(!order)throw new Error("Order not found.");if(order.number.startsWith("DEMO-"))throw new Error("Demo preview orders cannot trigger real refunds.");if(!["paid","partially_refunded"].includes(order.payment_status)||!order.razorpay_payment_id)throw new Error("Only captured Razorpay payments can be refunded.");
     const totals=await sql<Array<{amount:number}>>`SELECT coalesce(sum(amount),0)::int amount FROM refunds WHERE order_id=${orderId} AND status IN ('queued','pending','processed')`;
     if(amount<1||amount>order.grand_total-(totals[0]?.amount??0))throw new Error("Refund amount exceeds the remaining captured amount.");
     const idempotencyKey=randomUUID();const receipt=`${order.number}-${idempotencyKey.slice(0,8)}`;
